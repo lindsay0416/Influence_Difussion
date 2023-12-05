@@ -18,7 +18,7 @@ else:
 @app.route('/add_record', methods=['POST'])
 def add_record():
     index_name = request.json.get('index')
-    file_name = request.json.get('file_name')
+    file_name = request.json.get('file_name') 
     document_id = request.json.get('id')
     document_body = request.json.get('body')
 
