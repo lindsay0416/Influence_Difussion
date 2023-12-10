@@ -1,4 +1,4 @@
-from embedding_utils import get_embedding
+from embedding_utils import Text2Vector
 from elasticsearch import Elasticsearch
 
 
@@ -15,7 +15,7 @@ def main():
 
     # text to vector 
     text = "Stores the text and its embedding into Elasticsearch."
-    get_embedding(text)
+    Text2Vector.get_embedding(text)
 
 if __name__ == '__main__':
     main()
