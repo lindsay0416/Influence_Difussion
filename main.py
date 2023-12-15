@@ -13,7 +13,7 @@ def main():
     else:
         print("Could not connect to Elasticsearch")
 
-    # text to vector 
+    # test text to vector 
     text = "Stores the text and its embedding into Elasticsearch."
     Text2Vector.get_embedding(text)
 
