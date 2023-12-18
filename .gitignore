@@ -1,4 +1,5 @@
 .history
-__pycache__
+/__pycache__/å
 embedding_utils.cpython-38.pyc
+*.ini
 config.ini
