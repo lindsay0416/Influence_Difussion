@@ -3,6 +3,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
 from langchain.llms import OpenAI
 import configparser
+from embedding_utils import Text2Vector
 
 
 app = Flask(__name__)
@@ -87,17 +88,6 @@ def add_sent_record():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/get_record/<index_name>/<document_id>', methods=['GET'])
-def get_record(index_name, document_id):
-    try:
-        response = es.get(index=index_name, id=document_id)
-        return jsonify(response['_source']), 200
-    except NotFoundError:
-        return jsonify({"error": "Document not found"}), 404
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
-
 # Read API key from config
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -131,7 +121,23 @@ def generate_text():
     else:
         generated_text = "No generation result found."
 
-    return jsonify({"generated_text": generated_text})
+    return jsonify({
+        "prompt": prompt,
+        "prompt_vector": Text2Vector.get_embedding(prompt),
+        "generated_text": generated_text,
+        "generated_text_vector": Text2Vector.get_embedding(generated_text)
+        })
+
+
+@app.route('/get_record/<index_name>/<document_id>', methods=['GET'])
+def get_record(index_name, document_id):
+    try:
+        response = es.get(index=index_name, id=document_id)
+        return jsonify(response['_source']), 200
+    except NotFoundError:
+        return jsonify({"error": "Document not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == '__main__':
