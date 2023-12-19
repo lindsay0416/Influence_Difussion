@@ -30,10 +30,9 @@ def generate_text():
     # Inspect the attributes of the LLMResult object
     print("LLMResult attributes:", dir(generated_text_result))
 
-   # Extract the generated text 
+    # Extract the generated text and remove leading newlines
     if generated_text_result and generated_text_result.generations:
-        # Access the first Generation object and get its text
-        generated_text = generated_text_result.generations[0][0].text
+        generated_text = generated_text_result.generations[0][0].text.strip()
     else:
         generated_text = "No generation result found."
 
