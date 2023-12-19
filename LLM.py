@@ -10,7 +10,7 @@ config.read('config.ini')
 api_key = config['openai']['api_key']
 
 # Initialize OpenAI model with GPT-3.5
-gpt = OpenAI(openai_api_key=api_key, model="gpt-3.5-turbo-1106")  # Replace with the correct GPT-3.5 model identifier
+gpt = OpenAI(openai_api_key=api_key, model="gpt-3.5-turbo-1106")
 
 
 @app.route('/generate_text', methods=['POST'])
