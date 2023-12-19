@@ -93,8 +93,8 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 api_key = config['openai']['api_key']
 
-# Initialize OpenAI model
-gpt = OpenAI(openai_api_key=api_key)
+# Initialize OpenAI model with GPT-3.5
+gpt = OpenAI(openai_api_key=api_key, model="gpt-3.5-turbo-1106")
 
 # Give prompts and generate the text from LLM
 @app.route('/generate_text', methods=['POST'])
