@@ -1,9 +1,11 @@
+import random
 from flask import Flask, request, jsonify
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
 from langchain.llms import OpenAI
 import configparser
 from embedding_utils import Text2Vector
+from graph_data import graph
 
 
 app = Flask(__name__)
@@ -94,7 +96,8 @@ config.read('config.ini')
 api_key = config['openai']['api_key']
 
 # Initialize OpenAI model with GPT-3.5
-gpt = OpenAI(openai_api_key=api_key, model="gpt-3.5-turbo-1106")
+# gpt = OpenAI(openai_api_key=api_key, model="gpt-3.5-turbo-1106")
+gpt = OpenAI(openai_api_key=api_key)
 
 # Give prompts and generate the text from LLM
 @app.route('/generate_text', methods=['POST'])
@@ -120,12 +123,16 @@ def generate_text():
         generated_text = generated_text_result.generations[0][0].text.strip()
     else:
         generated_text = "No generation result found."
+    
+    # Randomly select a node from the graph
+    random_node = random.choice(list(graph.keys()))
 
     return jsonify({
         "prompt": prompt,
         "prompt_vector": Text2Vector.get_embedding(prompt),
         "generated_text": generated_text,
-        "generated_text_vector": Text2Vector.get_embedding(generated_text)
+        "generated_text_vector": Text2Vector.get_embedding(generated_text),
+        "Node": random_node # Randomly choose a node to receive the text.
         })
 
 
