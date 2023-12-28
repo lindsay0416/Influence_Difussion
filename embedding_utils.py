@@ -1,5 +1,5 @@
 from sentence_transformers import SentenceTransformer
-
+from elasticsearch import RequestError
 
 class Text2Vector:
     
@@ -20,29 +20,56 @@ class Text2Vector:
         "script_score": {
             "query": {"match_all": {}},
             "script": {
-                "source": "cosineSimilarity(params.query_vector, doc['received_text_vector']) + 1.0",
+                "source": """
+                if (doc.containsKey('received_text_vector')) {
+                    return cosineSimilarity(params.query_vector, 'received_text_vector') + 1.0;
+                } else {
+                    return 0.0;  // Default score if vector is missing
+                }
+                """,
                 "params": {"query_vector": query_vector}
+                }
             }
         }
-    }
-        response = es.search(index=index_name, body={"query": script_query, "size": 10})
-        return response
+        try:
+            response = es.search(index=index_name, body={"query": script_query, "size": 10})
+            return response
+        except RequestError as e:
+            print("RequestError occurred:", e.info)
+            raise
     
     # Sent text vector
     @staticmethod
-    def sent_text_cosine_similarity(index_name, query_vector, es):
+    def sent_text_cosine_similarity(index_name, query_vector, es):   
         script_query = {
         "script_score": {
             "query": {"match_all": {}},
             "script": {
-                "source": "cosineSimilarity(params.query_vector, doc['sent_text_vector']) + 1.0",
+                "source": "cosineSimilarity(params.query_vector, 'sent_text_vector') + 1.0",
                 "params": {"query_vector": query_vector}
+                }
+            }
+        }
+        try:
+            response = es.search(index=index_name, body={"query": script_query, "size": 1})
+            return response
+        except RequestError as e:
+            print("RequestError occurred:", e.info)
+            raise
+
+    # Test, return the detail of an index.
+    @staticmethod
+    def test_script(index_name, es):
+        script_query = {
+        "script_score": {
+            "query": {"match_all": {}},
+            "script": {
+                "source": "1"  # Just returns a constant score
             }
         }
     }
         response = es.search(index=index_name, body={"query": script_query, "size": 10})
         return response
-
 
             
 
