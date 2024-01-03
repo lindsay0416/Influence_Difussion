@@ -21,10 +21,10 @@ class Text2Vector:
             "query": {"match_all": {}},
             "script": {
                 "source": """
-                if (doc.containsKey('received_text_vector')) {
+                if (!doc['received_text_vector'].empty) {
                     return cosineSimilarity(params.query_vector, 'received_text_vector') + 1.0;
                 } else {
-                    return 0.0;  // Default score if vector is missing
+                    return 0.0; // Default score if vector is missing
                 }
                 """,
                 "params": {"query_vector": query_vector}
