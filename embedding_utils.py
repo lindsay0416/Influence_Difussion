@@ -9,8 +9,6 @@ class Text2Vector:
         model = SentenceTransformer('all-MiniLM-L6-v2')
         # Generate the embedding for the text
         embedding = model.encode(text).tolist()
-
-        print(embedding)   
         return embedding
     
     # Received text vector
@@ -57,6 +55,15 @@ class Text2Vector:
             print("RequestError occurred:", e.info)
             raise
 
+    # return the similarity score
+    @staticmethod
+    def get_similarity_score(SimilarityResp):
+        scores = []
+        for hit in SimilarityResp['hits']['hits']:
+            score = hit['_score'] - 1.0  # Subtracting 1.0 because we added 1.0 in the script
+            scores.append(score)
+        return scores
+        
     # Test, return the detail of an index.
     @staticmethod
     def test_script(index_name, es):
