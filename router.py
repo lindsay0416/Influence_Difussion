@@ -6,6 +6,7 @@ from langchain.llms import OpenAI
 import configparser
 from embedding_utils import Text2Vector
 from graph_data import graph
+import requests
 
 
 app = Flask(__name__)
@@ -38,57 +39,6 @@ def get_next_id(index_name):
     es.index(index=index_name, id=counter_id, document={'last_id': next_id})
 
     return next_id
-
-
-# Add received records 
-@app.route('/add_received_record', methods=['POST'])
-def add_received_record():
-    index_name = request.json.get('index')
-    file_name = request.json.get('file_name') 
-    # document_id = request.json.get('id') 
-    document_body = request.json.get('body')
-
-    # Get the next ID
-    document_id = get_next_id(index_name)
-
-    if not document_id or not document_body or not file_name or not index_name:
-        return jsonify({"error": "Document ID and body are required"}), 400
-
-    # Ensure 'body' contains the required sub-fields
-    if not all(k in document_body for k in ['node', 'received_text_weight', 'from', 'received_text', 'received_text_vector']):
-        return jsonify({"error": "Incomplete body data"}), 400
-    
-    try:
-        response = es.index(index=index_name, id=document_id, document=document_body)
-        return jsonify(response), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# Add sent records 
-@app.route('/add_sent_record', methods=['POST'])
-def add_sent_record():
-    index_name = request.json.get('index')
-    file_name = request.json.get('file_name') 
-    # document_id = request.json.get('id')
-    document_body = request.json.get('body')
-
-    # Get the next ID
-    document_id = get_next_id(index_name)
-
-    if not document_id or not document_body or not file_name or not index_name:
-        return jsonify({"error": "Document ID and body are required"}), 400
-
-    # Ensure 'body' contains the required sub-fields
-    if not all(k in document_body for k in ['node', 'to', 'sent_text', 'sent_text_vector']):
-        return jsonify({"error": "Incomplete body data"}), 400
-    
-    try:
-        response = es.index(index=index_name, id=document_id, document=document_body)
-        return jsonify(response), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 
 # Read API key from config
 config = configparser.ConfigParser()
@@ -145,6 +95,130 @@ def get_record(index_name, document_id):
         return jsonify({"error": "Document not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# Add received records to elasticsearch
+@app.route('/add_received_record', methods=['POST'])
+def add_received_record():
+    data = request.get_json()
+    index_name = data.get('index')
+    document_body = data.get('body')
+
+    # Generate text vector
+    received_text = document_body.get('received_text')
+    if received_text:
+        document_body['received_text_vector'] = Text2Vector.get_embedding(received_text)
+
+    # Index in Elasticsearch
+    response = es.index(index=index_name, document=document_body)
+    return jsonify(response)
+
+
+# Add sent records to elasticsearch
+@app.route('/add_sent_record', methods=['POST'])
+def add_sent_record():
+    data = request.get_json()
+    index_name = data.get('index')
+    document_body = data.get('body')
+
+    # Generate text vector
+    sent_text = document_body.get('sent_text')
+    if sent_text:
+        document_body['sent_text_vector'] = Text2Vector.get_embedding(sent_text)
+
+    # Index in Elasticsearch
+    response = es.index(index=index_name, document=document_body)
+    return jsonify(response)
+
+
+# Python Function to Send Request:
+def add_received_record_to_elasticsearch(api_url, index_name, text, is_received=True):
+    endpoint = '/add_received_record' if is_received else '/add_sent_record'
+    url = api_url + endpoint
+
+    node = f"N{random.randint(1, 10)}"
+    weight = random.uniform(0, 1) if is_received else None
+
+    document_body = {
+        "node": node,
+        "from": f"N{random.randint(1, 10)}",
+        "received_text": text if is_received else None,
+        "received_text_weight": str(weight) if is_received else None,
+        "sent_text": None if is_received else text
+    }
+
+    document_body = {k: v for k, v in document_body.items() if v is not None}
+    request_data = {"index": index_name, "file_name": "_doc", "body": document_body}
+
+    response = requests.post(url, json=request_data)
+    return response
+
+
+# # Add received records 
+# @app.route('/add_received_record', methods=['POST'])
+# def add_received_record():
+#     index_name = request.json.get('index')
+#     file_name = request.json.get('file_name') 
+#     # document_id = request.json.get('id') 
+#     document_body = request.json.get('body')
+
+#     # Get the next ID
+#     document_id = get_next_id(index_name)
+
+#     if not document_id or not document_body or not file_name or not index_name:
+#         return jsonify({"error": "Document ID and body are required"}), 400
+
+#     # Ensure 'body' contains the required sub-fields
+#     if not all(k in document_body for k in ['node', 'received_text_weight', 'from', 'received_text', 'received_text_vector']):
+#         return jsonify({"error": "Incomplete body data"}), 400
+    
+#     try:
+#         response = es.index(index=index_name, id=document_id, document=document_body)
+#         return jsonify(response), 200
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+
+# # Add sent records 
+# @app.route('/add_sent_record', methods=['POST'])
+# def add_sent_record():
+#     index_name = request.json.get('index')
+#     file_name = request.json.get('file_name') 
+#     # document_id = request.json.get('id')
+#     document_body = request.json.get('body')
+
+#     # Get the next ID
+#     document_id = get_next_id(index_name)
+
+#     if not document_id or not document_body or not file_name or not index_name:
+#         return jsonify({"error": "Document ID and body are required"}), 400
+
+#     # Ensure 'body' contains the required sub-fields
+#     if not all(k in document_body for k in ['node', 'to', 'sent_text', 'sent_text_vector']):
+#         return jsonify({"error": "Incomplete body data"}), 400
+    
+#     try:
+#         response = es.index(index=index_name, id=document_id, document=document_body)
+#         return jsonify(response), 200
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+
+## Sample usage for add_received_record_to_elasticsearch
+# api_url = "http://localhost:5000"
+# index_name = "received_text_test01"
+# text = "Sample text for testing"
+# response = add_received_record_to_elasticsearch(api_url, index_name, text, is_received=True)
+# print(response.json())
+
+
+
+# Example usage
+# api_url = "http://localhost:5000"
+# index_name = "sent_text_test01"
+# text = "Sample text for testing sent record"
+# response = add_sent_record_to_elasticsearch(api_url, index_name, text)
+# print(response.json())
 
 
 if __name__ == '__main__':
