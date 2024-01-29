@@ -144,29 +144,7 @@ def add_sent_record():
     return jsonify(response)
 
 
-# # Python Function to Send Request:
-# def add_record_to_elasticsearch(api_url, index_name, text, is_received=True):
-#     endpoint = '/add_received_record' if is_received else '/add_sent_record'
-#     url = api_url + endpoint
-
-#     node = f"N{random.randint(1, 10)}"
-#     weight = random.uniform(0, 1) if is_received else None
-
-#     document_body = {
-#         "node": node,
-#         "from": f"N{random.randint(1, 10)}",
-#         "received_text": text if is_received else None,
-#         "received_text_weight": str(weight) if is_received else None,
-#         "sent_text": None if is_received else text
-#     }
-
-#     document_body = {k: v for k, v in document_body.items() if v is not None}
-#     request_data = {"index": index_name, "file_name": "_doc", "body": document_body}
-
-#     response = requests.post(url, json=request_data)
-#     return response
-
-
+# add received and sent records to elasticsearch
 def add_record_to_elasticsearch(node, api_url, index_name, text, graph, is_received=True):
     # Choose a random node from the graph
     # node = random.choice(list(graph.keys()))
@@ -210,7 +188,7 @@ def add_record_to_elasticsearch(node, api_url, index_name, text, graph, is_recei
 
     return response
 
-
+# Simulation message flow with loop
 def simulate_message_flow(graph, api_url, start_text, current_node):
     print("Start simulation")
 
@@ -233,7 +211,7 @@ def simulate_message_flow(graph, api_url, start_text, current_node):
                 queue.append((text, neighbour))
     print("End simulation")
 
-
+# init the first text and the Node
 @app.route('/simulate_flow', methods=['POST'])
 def simulate_flow():
     data = request.get_json()
