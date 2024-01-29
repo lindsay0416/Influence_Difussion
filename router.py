@@ -142,7 +142,7 @@ def add_sent_record():
 
 
 # Python Function to Send Request:
-def add_received_record_to_elasticsearch(api_url, index_name, text, is_received=True):
+def add_record_to_elasticsearch(api_url, index_name, text, is_received=True):
     endpoint = '/add_received_record' if is_received else '/add_sent_record'
     url = api_url + endpoint
 
@@ -162,6 +162,7 @@ def add_received_record_to_elasticsearch(api_url, index_name, text, is_received=
 
     response = requests.post(url, json=request_data)
     return response
+
 
 
 # # Add received records 
@@ -214,11 +215,11 @@ def add_received_record_to_elasticsearch(api_url, index_name, text, is_received=
 #         return jsonify({"error": str(e)}), 500
 
 
-## Sample usage for add_received_record_to_elasticsearch
+## Sample usage for add_record_to_elasticsearch
 # api_url = "http://localhost:5000"
 # index_name = "received_text_test01"
 # text = "Sample text for testing"
-# response = add_received_record_to_elasticsearch(api_url, index_name, text, is_received=True)
+# response = add_record_to_elasticsearch(api_url, index_name, text, is_received=True)
 # print(response.json())
 
 
