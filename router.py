@@ -182,26 +182,75 @@ def add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_
     print(response.json())  # Print the response from the API call
     return response
 
+
 def simulate_message_flow(graph, api_url, start_text, current_node):
     print("Start simulation")
+
     visited_nodes = set()
+    skip_next_round = set()
+    senders = set()
+    receivers = set()
+
     queue = [(start_text, current_node)]
 
     while queue:
-        text, node = queue.pop(0)
-        if node not in visited_nodes:
-            visited_nodes.add(node)
-            for connected_node, weight in graph[node].items():
+        text, current_node = queue.pop(0)
+        visited_nodes.add(current_node)
+
+        if current_node in skip_next_round:
+            skip_next_round.remove(current_node)
+            continue
+
+        for neighbour, weight in graph[current_node].items():
+            if neighbour not in visited_nodes:
                 # Add sent record
-                add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_received=False)
+                senders.add(current_node)
+                add_record_to_elasticsearch(current_node, neighbour, api_url, text, weight, is_received=False)
+                print("Sent from Node:", current_node, "to Node:", neighbour)
 
                 # Add received record
-                add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_received=True)
+                receivers.add(neighbour)
+                add_record_to_elasticsearch(current_node, neighbour, api_url, text, weight, is_received=True)
+                print("Received at Node:", neighbour, "from Node:", current_node, "Weight:", weight)
 
-                if connected_node not in visited_nodes:
-                    queue.append((text, connected_node))
+                # If the weight is less than or equal to 0.3, mark the neighbour to skip the next round as a sender
+                if weight <= 0.3:
+                    skip_next_round.add(neighbour)
+
+                # Continue the simulation with the neighbour as the current node
+                queue.append((text, neighbour))
+
+    # Nodes that have never sent any messages
+    never_senders = graph.keys() - senders
+    # Nodes that have never received any messages
+    never_receivers = graph.keys() - receivers
 
     print("End simulation")
+    print("Nodes that never sent any messages:", never_senders)
+    print("Nodes that never received any messages:", never_receivers)
+
+    return list(never_senders), list(never_receivers)
+
+# def simulate_message_flow(graph, api_url, start_text, current_node):
+#     print("Start simulation")
+#     visited_nodes = set()
+#     queue = [(start_text, current_node)]
+
+#     while queue:
+#         text, node = queue.pop(0)
+#         if node not in visited_nodes:
+#             visited_nodes.add(node)
+#             for connected_node, weight in graph[node].items():
+#                 # Add sent record
+#                 add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_received=False)
+
+#                 # Add received record
+#                 add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_received=True)
+
+#                 if connected_node not in visited_nodes:
+#                     queue.append((text, connected_node))
+
+#     print("End simulation")
 
 # Sample Flask route to initiate the simulation
 @app.route('/simulate_flow', methods=['POST'])
