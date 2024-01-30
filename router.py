@@ -177,9 +177,11 @@ def add_record_to_elasticsearch(node, api_url, index_name, text, graph, is_recei
 
         # Make the POST request to the API
         response = requests.post(url, json=request_data)
+        print(f"Sent from Node: {node} to Node: {connected_node}")
+        print(f"Received at Node: {connected_node} from Node: {node}, Weight: {weight}")
 
         # Print the response details
-        print(f"{'Received' if is_received else 'Sent'}: {response.json()}")
+        print(f"{'Received' if is_received else 'Sent'}: {document_body}")
 
 
 # Simulation message flow with loop
@@ -196,11 +198,11 @@ def simulate_message_flow(graph, api_url, start_text, current_node):
         for neighbour, weight in graph[current_node].items():
             # Add sent record
             add_record_to_elasticsearch(current_node, api_url, "sent_text_test01", text, graph, is_received=False)
-            print(f"Sent from Node: {current_node} to Node: {neighbour}")
+            # print(f"Sent from Node: {current_node} to Node: {neighbour}")
 
             # Add received record
             add_record_to_elasticsearch(current_node, api_url, "received_text_test01", text, graph, is_received=True)
-            print(f"Received at Node: {neighbour} from Node: {current_node}, Weight: {weight}")
+            # print(f"Received at Node: {neighbour} from Node: {current_node}, Weight: {weight}")
 
             if neighbour not in visited_nodes:
                 queue.append((text, neighbour))
