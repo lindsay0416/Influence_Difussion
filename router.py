@@ -146,47 +146,41 @@ def add_sent_record():
 
 # add received and sent records to elasticsearch
 def add_record_to_elasticsearch(node, api_url, index_name, text, graph, is_received=True):
-    # Choose a random node from the graph
-    # node = random.choice(list(graph.keys()))
+     for connected_node, weight in graph[node].items():
+            # Define the API endpoint
+        endpoint = '/add_received_record' if is_received else '/add_sent_record'
+        url = api_url + endpoint
 
-    # Choose a connected node and the corresponding weight
-    connected_node, weight = random.choice(list(graph[node].items()))
+        # Prepare the document body
+        if is_received:
+            document_body = {
+                "node": connected_node,
+                "from": node,
+                "received_text": text,
+                "received_text_weight": str(weight),
+            }
+        else:
+            document_body = {
+                "node": node,
+                "to": connected_node,
+                "sent_text": text,
+            }
 
-    # Define the API endpoint
-    endpoint = '/add_received_record' if is_received else '/add_sent_record'
-    url = api_url + endpoint
+        index_name = "received_text_test01" if is_received else "sent_text_test01"
 
-    # Prepare the document body
-    if is_received:
-        document_body = {
-            "node": connected_node,
-            "from": node,
-            "received_text": text,
-            "received_text_weight": str(weight),
+        # Prepare request data
+        request_data = {
+            "index": index_name,
+            "file_name": "_doc",
+            "body": document_body
         }
-    else:
-        document_body = {
-            "node": node,
-            "to": connected_node,
-            "sent_text": text,
-        }
 
-    index_name = "received_text_test01" if is_received else "sent_text_test01"
-   # Prepare the request data
-    request_data = {
-        "index": index_name,
-        "file_name": "_doc",
-        "body": document_body
-    }
+        # Make the POST request to the API
+        response = requests.post(url, json=request_data)
 
-    # Make the POST request to the API
-    response = requests.post(url, json=request_data)
+        # Print the response details
+        print(f"{'Received' if is_received else 'Sent'}: {response.json()}")
 
-    # Print the entire response
-    print("Response from Elasticsearch:")
-    print(response.json())
-
-    return response
 
 # Simulation message flow with loop
 def simulate_message_flow(graph, api_url, start_text, current_node):
@@ -200,14 +194,15 @@ def simulate_message_flow(graph, api_url, start_text, current_node):
         visited_nodes.add(current_node)
 
         for neighbour, weight in graph[current_node].items():
-            if neighbour not in visited_nodes:     
-                # Add sent record
-                add_record_to_elasticsearch(current_node, api_url, "sent_text_test01", text, graph, is_received=False)
-                print("Sent", f"Node: {current_node}, To: {neighbour}")
+            # Add sent record
+            add_record_to_elasticsearch(current_node, api_url, "sent_text_test01", text, graph, is_received=False)
+            print(f"Sent from Node: {current_node} to Node: {neighbour}")
 
-                  # Add received record
-                add_record_to_elasticsearch(current_node, api_url, "received_text_test01", text, graph, is_received=True)
-                print("Received: ", f"Node: {neighbour}, From: {current_node}, Weight: {weight}")
+            # Add received record
+            add_record_to_elasticsearch(current_node, api_url, "received_text_test01", text, graph, is_received=True)
+            print(f"Received at Node: {neighbour} from Node: {current_node}, Weight: {weight}")
+
+            if neighbour not in visited_nodes:
                 queue.append((text, neighbour))
     print("End simulation")
 
@@ -218,7 +213,7 @@ def simulate_flow():
     start_text = data.get('start_text') # this is the node initial text
     current_node = data.get('current_node') # this is the first start node 
 
-    # Call the simulate message flow function
+    # Call the simulated message flow function
     simulate_message_flow(graph, api_url, start_text, current_node)
     return jsonify({"message": "Simulation started"}), 200
 
