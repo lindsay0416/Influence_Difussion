@@ -145,149 +145,74 @@ def add_sent_record():
 
 
 # add received and sent records to elasticsearch
-def add_record_to_elasticsearch(node, api_url, index_name, text, graph, is_received=True):
-     for connected_node, weight in graph[node].items():
-            # Define the API endpoint
-        endpoint = '/add_received_record' if is_received else '/add_sent_record'
-        url = api_url + endpoint
+def add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_received):
+    # Define the API endpoint
+    endpoint = '/add_received_record' if is_received else '/add_sent_record'
+    url = api_url + endpoint
 
-        # Prepare the document body
-        if is_received:
-            document_body = {
-                "node": connected_node,
-                "from": node,
-                "received_text": text,
-                "received_text_weight": str(weight),
-            }
-        else:
-            document_body = {
-                "node": node,
-                "to": connected_node,
-                "sent_text": text,
-            }
+    # Prepare the document body
+    document_body = {
+        "node": connected_node if is_received else node,
+        "from": node if is_received else None,
+        "to": connected_node if not is_received else None,
+        "received_text": text if is_received else None,
+        "sent_text": text if not is_received else None,
+        "received_text_weight": str(weight) if is_received else None,
+    }
 
-        index_name = "received_text_test01" if is_received else "sent_text_test01"
+    # Remove None fields
+    document_body = {k: v for k, v in document_body.items() if v is not None}
 
-        # Prepare request data
-        request_data = {
-            "index": index_name,
-            "file_name": "_doc",
-            "body": document_body
-        }
+    # Set the correct index name
+    index_name = "received_text_test01" if is_received else "sent_text_test01"
 
-        # Make the POST request to the API
-        response = requests.post(url, json=request_data)
-        print(f"Sent from Node: {node} to Node: {connected_node}")
-        print(f"Received at Node: {connected_node} from Node: {node}, Weight: {weight}")
+    # Prepare request data
+    request_data = {
+        "index": index_name,
+        "file_name": "_doc",
+        "body": document_body
+    }
 
-        # Print the response details
-        print(f"{'Received' if is_received else 'Sent'}: {document_body}")
+    # Make the POST request to the API
+    response = requests.post(url, json=request_data)
 
+    # print(f"Sent from Node: {node} to Node: {connected_node}")
+    # print(f"Received at Node: {connected_node} from Node: {node}, Weight: {weight}")
+    print(f"{'Received' if is_received else 'Sent'}: {document_body}")
+    print(response.json())  # Print the response from the API call
+    return response
 
-# Simulation message flow with loop
 def simulate_message_flow(graph, api_url, start_text, current_node):
     print("Start simulation")
-
     visited_nodes = set()
     queue = [(start_text, current_node)]
 
     while queue:
-        text, current_node = queue.pop(0)
-        visited_nodes.add(current_node)
+        text, node = queue.pop(0)
+        if node not in visited_nodes:
+            visited_nodes.add(node)
+            for connected_node, weight in graph[node].items():
+                # Add sent record
+                add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_received=False)
 
-        for neighbour, weight in graph[current_node].items():
-            # Add sent record
-            add_record_to_elasticsearch(current_node, api_url, "sent_text_test01", text, graph, is_received=False)
-            # print(f"Sent from Node: {current_node} to Node: {neighbour}")
+                # Add received record
+                add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_received=True)
 
-            # Add received record
-            add_record_to_elasticsearch(current_node, api_url, "received_text_test01", text, graph, is_received=True)
-            # print(f"Received at Node: {neighbour} from Node: {current_node}, Weight: {weight}")
+                if connected_node not in visited_nodes:
+                    queue.append((text, connected_node))
 
-            if neighbour not in visited_nodes:
-                queue.append((text, neighbour))
     print("End simulation")
 
-# init the first text and the Node
+# Sample Flask route to initiate the simulation
 @app.route('/simulate_flow', methods=['POST'])
 def simulate_flow():
     data = request.get_json()
-    start_text = data.get('start_text') # this is the node initial text
-    current_node = data.get('current_node') # this is the first start node 
+    start_text = data['start_text']  # The initial message text
+    current_node = data['current_node']  # The starting node for the simulation
 
-    # Call the simulated message flow function
     simulate_message_flow(graph, api_url, start_text, current_node)
     return jsonify({"message": "Simulation started"}), 200
 
-
-
- 
-
-# # Add received records 
-# @app.route('/add_received_record', methods=['POST'])
-# def add_received_record():
-#     index_name = request.json.get('index')
-#     file_name = request.json.get('file_name') 
-#     # document_id = request.json.get('id') 
-#     document_body = request.json.get('body')
-
-#     # Get the next ID
-#     document_id = get_next_id(index_name)
-
-#     if not document_id or not document_body or not file_name or not index_name:
-#         return jsonify({"error": "Document ID and body are required"}), 400
-
-#     # Ensure 'body' contains the required sub-fields
-#     if not all(k in document_body for k in ['node', 'received_text_weight', 'from', 'received_text', 'received_text_vector']):
-#         return jsonify({"error": "Incomplete body data"}), 400
-    
-#     try:
-#         response = es.index(index=index_name, id=document_id, document=document_body)
-#         return jsonify(response), 200
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
-
-
-# # Add sent records 
-# @app.route('/add_sent_record', methods=['POST'])
-# def add_sent_record():
-#     index_name = request.json.get('index')
-#     file_name = request.json.get('file_name') 
-#     # document_id = request.json.get('id')
-#     document_body = request.json.get('body')
-
-#     # Get the next ID
-#     document_id = get_next_id(index_name)
-
-#     if not document_id or not document_body or not file_name or not index_name:
-#         return jsonify({"error": "Document ID and body are required"}), 400
-
-#     # Ensure 'body' contains the required sub-fields
-#     if not all(k in document_body for k in ['node', 'to', 'sent_text', 'sent_text_vector']):
-#         return jsonify({"error": "Incomplete body data"}), 400
-    
-#     try:
-#         response = es.index(index=index_name, id=document_id, document=document_body)
-#         return jsonify(response), 200
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
-
-
-## Sample usage for add_record_to_elasticsearch
-# api_url = "http://localhost:5000"
-# index_name = "received_text_test01"
-# text = "Sample text for testing"
-# response = add_record_to_elasticsearch(api_url, index_name, text, is_received=True)
-# print(response.json())
-
-
-
-# Example usage
-# api_url = "http://localhost:5000"
-# index_name = "sent_text_test01"
-# text = "Sample text for testing sent record"
-# response = add_sent_record_to_elasticsearch(api_url, index_name, text)
-# print(response.json())
 
 
 if __name__ == '__main__':
