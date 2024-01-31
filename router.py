@@ -2,7 +2,6 @@ import random
 from flask import Flask, request, jsonify
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
-from langchain.llms import OpenAI
 import openai
 import configparser
 from embedding_utils import Text2Vector
@@ -70,8 +69,8 @@ def generate_text():
     # Debug: Print the generated text
     print("Generated text:", generated_text)
 
-    # Randomly select a node from the graph (assuming 'graph' is a defined dictionary)
-    random_node = random.choice(list(graph.keys()))
+    # # Randomly select a node from the graph (assuming 'graph' is a defined dictionary)
+    # random_node = random.choice(list(graph.keys()))
 
     # Assume Text2Vector.get_embedding is a defined function that generates vector embeddings
     prompt_vector = Text2Vector.get_embedding(prompt)
@@ -79,10 +78,10 @@ def generate_text():
     
     return jsonify({
         "prompt": prompt,
-        "prompt_vector": prompt_vector,
+        # "prompt_vector": prompt_vector,
         "generated_text": generated_text,
-        "generated_text_vector": generated_text_vector,
-        "Node": random_node  # Randomly choose a node to receive the text.
+        # "generated_text_vector": generated_text_vector
+        # "Node": random_node  # Randomly choose a node to receive the text.
     })
 
 @app.route('/get_record/<index_name>/<document_id>', methods=['GET'])
