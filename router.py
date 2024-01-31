@@ -36,20 +36,12 @@ if es.ping():
 else:
     print("Could not connect to Elasticsearch")
 
-    # Read API key from config
+# Read API key from config
 config = configparser.ConfigParser()
 config.read('config.ini')
 api_key = config['openai']['api_key']
-
-# # Initialize OpenAI model with GPT-3.5
-# gpt = OpenAI(openai_api_key=api_key, model="gpt-3.5-turbo-1106")
-# # gpt = OpenAI(openai_api_key=api_key)
-
-
 # Set the OpenAI API key
 openai.api_key = api_key
-
-
 
 
 # Give prompts and generate the text from LLM
@@ -60,10 +52,6 @@ def generate_text():
         return jsonify({"error": "Prompt is required"}), 400
 
     prompt = data['prompt']
-    # prompt_list = [prompt]
-
-    # Generate text using the list of prompts
-    # generated_text_result = gpt.generate(prompt_list)
 
     try:
         # Generate text using the OpenAI ChatCompletion endpoint
@@ -74,8 +62,8 @@ def generate_text():
                 {"role": "user", "content": prompt}
             ]
         )
-        # Extract the generated text
-        generated_text = response.choices[0].message.content.strip()
+        # Extract the generated text and remove newlines and extra white spaces
+        generated_text = response.choices[0].message.content.strip().replace("\n\n", " ").replace("\n", " ")
     except openai.error.OpenAIError as e:
         return jsonify({"error": str(e)}), 500
 
@@ -88,7 +76,7 @@ def generate_text():
     # Assume Text2Vector.get_embedding is a defined function that generates vector embeddings
     prompt_vector = Text2Vector.get_embedding(prompt)
     generated_text_vector = Text2Vector.get_embedding(generated_text)
-
+    
     return jsonify({
         "prompt": prompt,
         "prompt_vector": prompt_vector,
