@@ -3,11 +3,13 @@ from flask import Flask, request, jsonify
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
 from langchain.llms import OpenAI
+import openai
 import configparser
 from embedding_utils import Text2Vector
 from graph_data import graph
 import requests
 from collections import deque
+from generates_methods import GenerateText
 
 
 app = Flask(__name__)
@@ -34,33 +36,21 @@ if es.ping():
 else:
     print("Could not connect to Elasticsearch")
 
-# Check the id of a document in each index.
-# Make the id a unique number in Elasticsearch
-def get_next_id(index_name):
-    # Document ID for the counter
-    counter_id = 'counter'
-
-    # Try to get the current counter value
-    try:
-        current_counter = es.get(index=index_name, id=counter_id)['_source']
-        next_id = current_counter['last_id'] + 1
-    except NotFoundError:
-        # If not found, start from 1
-        next_id = 1
-
-    # Update the counter
-    es.index(index=index_name, id=counter_id, document={'last_id': next_id})
-
-    return next_id
-
-# Read API key from config
+    # Read API key from config
 config = configparser.ConfigParser()
 config.read('config.ini')
 api_key = config['openai']['api_key']
 
-# Initialize OpenAI model with GPT-3.5
+# # Initialize OpenAI model with GPT-3.5
 # gpt = OpenAI(openai_api_key=api_key, model="gpt-3.5-turbo-1106")
-gpt = OpenAI(openai_api_key=api_key)
+# # gpt = OpenAI(openai_api_key=api_key)
+
+
+# Set the OpenAI API key
+openai.api_key = api_key
+
+
+
 
 # Give prompts and generate the text from LLM
 @app.route('/generate_text', methods=['POST'])
@@ -70,34 +60,42 @@ def generate_text():
         return jsonify({"error": "Prompt is required"}), 400
 
     prompt = data['prompt']
-    prompt_list = [prompt]
+    # prompt_list = [prompt]
 
     # Generate text using the list of prompts
-    generated_text_result = gpt.generate(prompt_list)
-    # Debug: Print the LLMResult object
-    print("LLMResult object:", generated_text_result)
-    print("Type of LLMResult:", type(generated_text_result))
+    # generated_text_result = gpt.generate(prompt_list)
 
-    # Inspect the attributes of the LLMResult object
-    print("LLMResult attributes:", dir(generated_text_result))
+    try:
+        # Generate text using the OpenAI ChatCompletion endpoint
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        # Extract the generated text
+        generated_text = response.choices[0].message.content.strip()
+    except openai.error.OpenAIError as e:
+        return jsonify({"error": str(e)}), 500
 
-    # Extract the generated text and remove leading newlines
-    if generated_text_result and generated_text_result.generations:
-        generated_text = generated_text_result.generations[0][0].text.strip()
-    else:
-        generated_text = "No generation result found."
-    
-    # Randomly select a node from the graph
+    # Debug: Print the generated text
+    print("Generated text:", generated_text)
+
+    # Randomly select a node from the graph (assuming 'graph' is a defined dictionary)
     random_node = random.choice(list(graph.keys()))
+
+    # Assume Text2Vector.get_embedding is a defined function that generates vector embeddings
+    prompt_vector = Text2Vector.get_embedding(prompt)
+    generated_text_vector = Text2Vector.get_embedding(generated_text)
 
     return jsonify({
         "prompt": prompt,
-        "prompt_vector": Text2Vector.get_embedding(prompt),
+        "prompt_vector": prompt_vector,
         "generated_text": generated_text,
-        "generated_text_vector": Text2Vector.get_embedding(generated_text),
-        "Node": random_node # Randomly choose a node to receive the text.
-        })
-
+        "generated_text_vector": generated_text_vector,
+        "Node": random_node  # Randomly choose a node to receive the text.
+    })
 
 @app.route('/get_record/<index_name>/<document_id>', methods=['GET'])
 def get_record(index_name, document_id):
@@ -184,12 +182,13 @@ def add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_
 
 
 def simulate_message_flow(graph, api_url, start_text, current_node):
-    print("Start simulation")
-
     visited_nodes = set()
     skip_next_round = set()
     senders = set()
     receivers = set()
+
+    print("Start simulation")
+    text_to_send = start_text
 
     queue = [(start_text, current_node)]
 
@@ -201,13 +200,20 @@ def simulate_message_flow(graph, api_url, start_text, current_node):
             skip_next_round.remove(current_node)
             continue
 
+        text_to_send = GenerateText.get_generated_text(api_url, text_to_send)
+        if not text_to_send:
+            print("Text generation failed, ending simulation.")
+            break
+
         for neighbour, weight in graph[current_node].items():
             if neighbour not in visited_nodes:
+                queue.append((text_to_send, neighbour))
                 # Add sent record
                 senders.add(current_node)
                 add_record_to_elasticsearch(current_node, neighbour, api_url, text, weight, is_received=False)
                 print("Sent from Node:", current_node, "to Node:", neighbour)
 
+            
                 # Add received record
                 receivers.add(neighbour)
                 add_record_to_elasticsearch(current_node, neighbour, api_url, text, weight, is_received=True)
@@ -230,27 +236,6 @@ def simulate_message_flow(graph, api_url, start_text, current_node):
     print("Nodes that never received any messages:", never_receivers)
 
     return list(never_senders), list(never_receivers)
-
-# def simulate_message_flow(graph, api_url, start_text, current_node):
-#     print("Start simulation")
-#     visited_nodes = set()
-#     queue = [(start_text, current_node)]
-
-#     while queue:
-#         text, node = queue.pop(0)
-#         if node not in visited_nodes:
-#             visited_nodes.add(node)
-#             for connected_node, weight in graph[node].items():
-#                 # Add sent record
-#                 add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_received=False)
-
-#                 # Add received record
-#                 add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_received=True)
-
-#                 if connected_node not in visited_nodes:
-#                     queue.append((text, connected_node))
-
-#     print("End simulation")
 
 # Sample Flask route to initiate the simulation
 @app.route('/simulate_flow', methods=['POST'])
