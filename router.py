@@ -118,100 +118,7 @@ def add_sent_record():
     return jsonify(response)
 
 
-# add received and sent records to elasticsearch
-def add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_received):
-    # Define the API endpoint
-    endpoint = '/add_received_record' if is_received else '/add_sent_record'
-    url = api_url + endpoint
 
-    # Prepare the document body
-    document_body = {
-        "node": connected_node if is_received else node,
-        "from": node if is_received else None,
-        "to": connected_node if not is_received else None,
-        "received_text": text if is_received else None,
-        "sent_text": text if not is_received else None,
-        "received_text_weight": str(weight) if is_received else None,
-    }
-
-    # Remove None fields
-    document_body = {k: v for k, v in document_body.items() if v is not None}
-
-    # Set the correct index name
-    index_name = "received_text_test01" if is_received else "sent_text_test01"
-
-    # Prepare request data
-    request_data = {
-        "index": index_name,
-        "file_name": "_doc",
-        "body": document_body
-    }
-
-    # Make the POST request to the API
-    response = requests.post(url, json=request_data)
-
-    # print(f"Sent from Node: {node} to Node: {connected_node}")
-    # print(f"Received at Node: {connected_node} from Node: {node}, Weight: {weight}")
-    print(f"{'Received' if is_received else 'Sent'}: {document_body}")
-    print(response.json())  # Print the response from the API call
-    return response
-
-
-def simulate_message_flow(graph, api_url, start_text, current_node):
-    visited_nodes = set()
-    skip_next_round = set()
-    senders = set()
-    receivers = set()
-
-    print("Start simulation")
-    text_to_send = start_text
-
-    queue = [(start_text, current_node)]
-
-    while queue:
-        text, current_node = queue.pop(0)
-        visited_nodes.add(current_node)
-
-        if current_node in skip_next_round:
-            skip_next_round.remove(current_node)
-            continue
-
-        text_to_send = GenerateText.get_generated_text(api_url, text_to_send)
-        if not text_to_send:
-            print("Text generation failed, ending simulation.")
-            break
-
-        for neighbour, weight in graph[current_node].items():
-            if neighbour not in visited_nodes:
-                queue.append((text_to_send, neighbour))
-                # Add sent record
-                senders.add(current_node)
-                add_record_to_elasticsearch(current_node, neighbour, api_url, text, weight, is_received=False)
-                print("Sent from Node:", current_node, "to Node:", neighbour)
-
-            
-                # Add received record
-                receivers.add(neighbour)
-                add_record_to_elasticsearch(current_node, neighbour, api_url, text, weight, is_received=True)
-                print("Received at Node:", neighbour, "from Node:", current_node, "Weight:", weight)
-
-                # If the weight is less than or equal to 0.3, mark the neighbour to skip the next round as a sender
-                if weight <= 0.3:
-                    skip_next_round.add(neighbour)
-
-                # Continue the simulation with the neighbour as the current node
-                queue.append((text, neighbour))
-
-    # Nodes that have never sent any messages
-    never_senders = graph.keys() - senders
-    # Nodes that have never received any messages
-    never_receivers = graph.keys() - receivers
-
-    print("End simulation")
-    print("Nodes that never sent any messages:", never_senders)
-    print("Nodes that never received any messages:", never_receivers)
-
-    return list(never_senders), list(never_receivers)
 
 # Sample Flask route to initiate the simulation
 @app.route('/simulate_flow', methods=['POST'])
@@ -220,7 +127,7 @@ def simulate_flow():
     start_text = data['start_text']  # The initial message text
     current_node = data['current_node']  # The starting node for the simulation
 
-    simulate_message_flow(graph, api_url, start_text, current_node)
+    GenerateText.simulate_message_flow(graph, api_url, start_text, current_node)
     return jsonify({"message": "Simulation started"}), 200
 
 
