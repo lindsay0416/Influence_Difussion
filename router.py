@@ -7,7 +7,6 @@ import configparser
 from embedding_utils import Text2Vector
 from graph_data import graph
 import requests
-from collections import deque
 from generates_methods import GenerateText
 
 
@@ -66,22 +65,12 @@ def generate_text():
     except openai.error.OpenAIError as e:
         return jsonify({"error": str(e)}), 500
 
-    # Debug: Print the generated text
-    print("Generated text:", generated_text)
-
-    # # Randomly select a node from the graph (assuming 'graph' is a defined dictionary)
-    # random_node = random.choice(list(graph.keys()))
-
-    # Assume Text2Vector.get_embedding is a defined function that generates vector embeddings
-    prompt_vector = Text2Vector.get_embedding(prompt)
-    generated_text_vector = Text2Vector.get_embedding(generated_text)
+    # # Debug: Print the generated text
+    # print("Generated text:", generated_text)
     
     return jsonify({
         "prompt": prompt,
-        # "prompt_vector": prompt_vector,
         "generated_text": generated_text,
-        # "generated_text_vector": generated_text_vector
-        # "Node": random_node  # Randomly choose a node to receive the text.
     })
 
 @app.route('/get_record/<index_name>/<document_id>', methods=['GET'])
