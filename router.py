@@ -1,4 +1,3 @@
-import random
 from flask import Flask, request, jsonify
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
@@ -8,6 +7,7 @@ from embedding_utils import Text2Vector
 import requests
 from generates_methods import GenerateText
 from flask_sockets import Sockets
+import os
 
 app = Flask(__name__)
 sockets = Sockets(app)
@@ -120,9 +120,6 @@ def generate_text():
     except openai.error.OpenAIError as e:
         return jsonify({"error": str(e)}), 500
 
-    # # Debug: Print the generated text
-    # print("Generated text:", generated_text)
-    
     return jsonify({
         "prompt": prompt,
         "generated_text": generated_text,
