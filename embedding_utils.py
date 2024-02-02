@@ -1,3 +1,4 @@
+# Those functions are not in use, atm
 from sentence_transformers import SentenceTransformer
 from elasticsearch import RequestError
 
