@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify
+import random, json
+from flask import Flask, request, jsonify, render_template
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
 import openai
@@ -70,6 +72,7 @@ def prepare_graph_for_frontend(graph_id):
 def graph_socket(ws):
     while not ws.closed:
         message = ws.receive()
+        print(f"websocket received message: {message}")
         if message:
             message_data = json.loads(message)
             graph_id = message_data.get('id')
@@ -96,6 +99,10 @@ api_key = config['openai']['api_key']
 # Set the OpenAI API key
 openai.api_key = api_key
 
+@app.route('/')
+def index():
+    print('Index loaded!')
+    return render_template('index.html')
 
 # Give prompts and generate the text from LLM
 @app.route('/generate_text', methods=['POST'])
@@ -176,6 +183,7 @@ def add_sent_record():
 @app.route('/simulate_flow', methods=['POST'])
 def simulate_flow():
     data = request.get_json()
+    # print(f"simulate_flow is called, and the requested data is {data}")
     start_text = data.get('start_text')  # The initial message text
     current_node = data.get('current_node')  # The starting node for the simulation
     graph_id = data.get('graph_id')  # The ID of the graph to be used
@@ -190,7 +198,7 @@ def simulate_flow():
         return jsonify({"error": "Invalid graph ID"}), 400
 
 
-
 if __name__ == '__main__':
+
     app.run(debug=True)
     
