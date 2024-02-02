@@ -40,6 +40,8 @@
 
     <div id="mynetwork"></div>
 
+    <button onclick="startSimulation()">Submit</button>
+
     <script type="text/javascript">
       // Create a DataSet with initial nodes
       var nodes = new vis.DataSet();
@@ -56,7 +58,7 @@
       // Initialize the network
       var network = new vis.Network(container, data, options);
 
-      var ws = new WebSocket("ws://your-websocket-server-url");
+      var ws = new WebSocket("ws://127.0.0.1:5000/graph");
       ws.onopen = function () {
         console.log("Connected to the WebSocket server");
       };
@@ -67,12 +69,26 @@
         var message = JSON.parse(event.data);
 
         switch (message.type) {
-          case "init":
-            // render the network
+            case "init":
+            // Clear the current network
             nodes.clear();
             edges.clear();
-            nodes.add(message.nodes);
-            edges.add(message.edges);
+
+            // Add nodes and edges from the message data
+            nodes.add(message.nodes.map(node => ({
+                id: node.id,
+                label: node.label
+            })));
+
+            edges.add(message.edges.map(edge => ({
+                from: edge.from,
+                to: edge.to,
+                label: edge.label
+            })));
+
+            // Fit the network to view
+            network.fit();
+            break;
             break;
           case "update":
             // Reset all nodes to the default color
@@ -99,6 +115,12 @@
           console.error("WebSocket is not open.");
         }
       }
+
+      function startSimulation() {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "start_simulation", graph_id: selectedGraphId }));
+        }
+    }
     </script>
   </body>
 </html>

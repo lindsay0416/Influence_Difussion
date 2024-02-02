@@ -5,23 +5,78 @@ from elasticsearch.exceptions import NotFoundError
 import openai
 import configparser
 from embedding_utils import Text2Vector
-from graph_data import graph
 import requests
 from generates_methods import GenerateText
-
+from flask_sockets import Sockets
 
 app = Flask(__name__)
-
+sockets = Sockets(app)
 
 graph = {
-    'N1': {'N2': 0.7, 'N4': 0.6},
-    'N2': {'N1': 0.7, 'N3': 0.3, 'U': 0.9},
-    'N3': {'N2': 0.3, 'N4': 0.6, 'B': 0.3},
-    'N4': {'N1': 0.6, 'N3': 0.6, 'U': 0.5, 'B': 0.6},
-    'B': {'N3': 0.3, 'N4': 0.6, 'A': 0.2},
-    'U': {'N2': 0.9, 'N4': 0.5},
-    'A': {'B': 0.2}
-}
+    'graph-1':{
+        'N1': {'N2': 0.7, 'N4': 0.6},
+        'N2': {'N1': 0.7, 'N3': 0.3, 'U': 0.9},
+        'N3': {'N2': 0.3, 'N4': 0.6, 'B': 0.3},
+        'N4': {'N1': 0.6, 'N3': 0.6, 'U': 0.5, 'B': 0.6},
+        'B': {'N3': 0.3, 'N4': 0.6, 'A': 0.2},
+        'U': {'N2': 0.9, 'N4': 0.5},
+        'A': {'B': 0.2}
+        },
+    'graph-2':{
+        'N1': {'N2': 0.7, 'N4': 0.6},
+        'N2': {'N1': 0.7, 'N3': 0.3, 'U': 0.9},
+        'N3': {'N2': 0.3, 'N4': 0.6, 'B': 0.3},
+        'N4': {'N1': 0.6, 'N3': 0.6, 'U': 0.5, 'B': 0.6},
+        'B': {'N3': 0.3, 'N4': 0.6, 'A': 0.2},
+        'U': {'N2': 0.9, 'N4': 0.5},
+        'A': {'B': 0.2}
+        },
+     'graph-3':{
+        'N1': {'N2': 0.7, 'N4': 0.6},
+        'N2': {'N1': 0.7, 'N3': 0.3, 'U': 0.9},
+        'N3': {'N2': 0.3, 'N4': 0.6, 'B': 0.3},
+        'N4': {'N1': 0.6, 'N3': 0.6, 'U': 0.5, 'B': 0.6},
+        'B': {'N3': 0.3, 'N4': 0.6, 'A': 0.2},
+        'U': {'N2': 0.9, 'N4': 0.5},
+        'A': {'B': 0.2}
+        }
+    }
+
+# graph  = {
+#     'N1': {'N2': 0.7, 'N4': 0.6},
+#     'N2': {'N1': 0.7, 'N3': 0.3, 'U': 0.9},
+#     'N3': {'N2': 0.3, 'N4': 0.6, 'B': 0.3},
+#     'N4': {'N1': 0.6, 'N3': 0.6, 'U': 0.5, 'B': 0.6},
+#     'B': {'N3': 0.3, 'N4': 0.6, 'A': 0.2},
+#     'U': {'N2': 0.9, 'N4': 0.5},
+#     'A': {'B': 0.2}
+#     }
+
+
+# Function to convert graph data to frontend format
+def prepare_graph_for_frontend(graph_id):
+    # Ensure that we're accessing the correct graph dictionary
+    selected_graph = graph.get(graph_id)
+    if selected_graph:
+        nodes = [{'id': key, 'label': key} for key in selected_graph.keys()]
+        edges = [{'from': from_node, 'to': to_node, 'label': str(weight)}
+                 for from_node, connections in selected_graph.items()
+                 for to_node, weight in connections.items()]
+        return {'nodes': nodes, 'edges': edges}
+    return {}
+
+
+@sockets.route('/graph')
+def graph_socket(ws):
+    while not ws.closed:
+        message = ws.receive()
+        if message:
+            message_data = json.loads(message)
+            graph_id = message_data.get('id')
+            if graph_id and graph_id in graph:
+                frontend_data = prepare_graph_for_frontend(graph_id)
+                ws.send(json.dumps(frontend_data))
+
 
 api_url = "http://127.0.0.1:5000"
 
@@ -124,11 +179,18 @@ def add_sent_record():
 @app.route('/simulate_flow', methods=['POST'])
 def simulate_flow():
     data = request.get_json()
-    start_text = data['start_text']  # The initial message text
-    current_node = data['current_node']  # The starting node for the simulation
+    start_text = data.get('start_text')  # The initial message text
+    current_node = data.get('current_node')  # The starting node for the simulation
+    graph_id = data.get('graph_id')  # The ID of the graph to be used
 
-    GenerateText.simulate_message_flow(graph, api_url, start_text, current_node)
-    return jsonify({"message": "Simulation started"}), 200
+    # nodes, edges = construct_graph_update(graph)
+    # send_update_to_frontend('init', nodes, edges)
+
+    if graph_id in graph:
+        GenerateText.simulate_message_flow(graph, api_url, start_text, current_node, graph_id)
+        return jsonify({"message": "Simulation started"}), 200
+    else:
+        return jsonify({"error": "Invalid graph ID"}), 400
 
 
 

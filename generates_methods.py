@@ -30,7 +30,12 @@ class GenerateText:
         return next_id
 
     @staticmethod
-    def simulate_message_flow(graph, api_url, start_text, current_node):
+    def simulate_message_flow(graphs, api_url, start_text, current_node, graph_id):
+        if graph_id not in graphs:
+            print(f"Graph ID {graph_id} not found.")
+            return
+
+        current_graph = graphs[graph_id]
         visited_nodes = set()
         skip_next_round = set()
         senders = set()
@@ -43,6 +48,11 @@ class GenerateText:
 
         while queue:
             text, current_node = queue.pop(0)
+
+            if current_node not in current_graph:
+                print(f"Node {current_node} not found in graph {graph_id}.")
+                continue
+
             visited_nodes.add(current_node)
 
             if current_node in skip_next_round:
@@ -54,32 +64,25 @@ class GenerateText:
                 print("Text generation failed, ending simulation.")
                 break
 
-            for neighbour, weight in graph[current_node].items():
+            for neighbour, weight in current_graph[current_node].items():
                 if neighbour not in visited_nodes:
                     queue.append((text_to_send, neighbour))
                     # Add sent record
                     senders.add(current_node)
                     GenerateText.add_record_to_elasticsearch(current_node, neighbour, api_url, text, weight, is_received=False)
                     print("Sent from Node:", current_node, "to Node:", neighbour)
-
                 
                     # Add received record
                     receivers.add(neighbour)
                     GenerateText.add_record_to_elasticsearch(current_node, neighbour, api_url, text, weight, is_received=True)
                     print("Received at Node:", neighbour, "from Node:", current_node, "Weight:", weight)
 
-                    # If the weight is less than or equal to 0.3, mark the neighbour to skip the next round as a sender
                     if weight <= 0.3:
                         skip_next_round.add(neighbour)
 
-                    # Continue the simulation with the neighbour as the current node
-                    queue.append((text, neighbour))
-
-        # Nodes that have never sent any messages
-        never_senders = graph.keys() - senders
-        # Nodes that have never received any messages
-        never_receivers = graph.keys() - receivers
-
+        # Print nodes that never sent/received messages
+        never_senders = set(current_graph.keys()) - senders
+        never_receivers = set(current_graph.keys()) - receivers
         print("End simulation")
         print("Nodes that never sent any messages:", never_senders)
         print("Nodes that never received any messages:", never_receivers)
