@@ -1,0 +1,137 @@
+<html>
+  <head>
+    <script
+      type="text/javascript"
+      src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"
+    ></script>
+
+    <style type="text/css">
+      #mynetwork {
+        width: 600px;
+        height: 400px;
+        border: 1px solid lightgray;
+      }
+    </style>
+  </head>
+  <body>
+  <div>
+
+    <p id="message"></p>
+  </div>
+    <div>
+      <input
+        type="radio"
+        name="network-radio"
+        id="network-radio-1"
+        onclick="toggleNetwork('network-1')"
+      />
+      Network 1
+      <input
+        type="radio"
+        name="network-radio"
+        id="network-radio-2"
+        onclick="toggleNetwork('network-2')"
+      />
+      Network 2
+      <input
+        type="radio"
+        name="network-radio"
+        id="network-radio-3"
+        onclick="toggleNetwork('network-3')"
+      />
+      Network 3
+    </div>
+
+    <div id="mynetwork"></div>
+
+    <button onclick="startSimulation()">Submit</button>
+
+    <script type="text/javascript">
+      // Create a DataSet with initial nodes
+      var nodes = new vis.DataSet();
+      var edges = new vis.DataSet();
+
+      // Configuration for the Network
+      var container = document.getElementById("mynetwork");
+      var data = {
+        nodes: nodes,
+        edges: edges,
+      };
+      var options = {}; // Specify options as needed
+
+      // Initialize the network
+      var network = new vis.Network(container, data, options);
+
+      var ws = new WebSocket("ws://127.0.0.1:5000/graph");
+
+      ws.onopen = function () {
+<!--        x=document.getElementById("message");-->
+<!--        x.innerHTML="Connected to the WebSocket server";-->
+        console.log("Connected to the WebSocket server");
+      };
+      ws.onerror = function (error) {
+<!--        x=document.getElementById("message");-->
+<!--        x.innerHTML="Did not connect to the WebSocket server" + error;-->
+        console.error("WebSocket Error: " + error);
+      };
+      ws.onmessage = function (event) {
+<!--        x=document.getElementById("message");-->
+<!--        x.innerHTML="ws.onmessage";-->
+        var message = JSON.parse(event.data);
+
+        switch (message.type) {
+            case "init":
+            // Clear the current network
+            nodes.clear();
+            edges.clear();
+
+            // Add nodes and edges from the message data
+            nodes.add(message.nodes.map(node => ({
+                id: node.id,
+                label: node.label
+            })));
+
+            edges.add(message.edges.map(edge => ({
+                from: edge.from,
+                to: edge.to,
+                label: edge.label
+            })));
+
+            // Fit the network to view
+            network.fit();
+            break;
+            break;
+          case "update":
+            // Reset all nodes to the default color
+            nodes.forEach(function (node) {
+              nodes.update({ id: message.id, color: "#00FFFF," });
+              // Highlight the specified node
+              if (message.id && message.color) {
+                nodes.update({ id: message.id, color: message.color });
+              }
+            });
+            break;
+
+          default:
+            console.log("invalid message type");
+            break;
+        }
+      };
+
+      // Function to send ID via WebSocket
+      function toggleNetwork(id) {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ id: id }));
+        } else {
+          console.error("WebSocket is not open.");
+        }
+      }
+
+      function startSimulation() {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "start_simulation", graph_id: selectedGraphId }));
+        }
+    }
+    </script>
+  </body>
+</html>
