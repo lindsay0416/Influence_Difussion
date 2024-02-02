@@ -49,12 +49,15 @@ filelock==3.0.12
 flake8==3.7.8
 flake8-bugbear==19.8.0
 Flask==1.1.2
+Flask-Sockets==0.2.1
 flatbuffers==1.12
 frozenlist==1.4.0
 fsspec==2023.10.0
 fvcore==0.1.1.post20200716
 gast==0.3.3
 gensim==4.0.0b0
+gevent==23.9.1
+gevent-websocket==0.10.1
 gitdb==4.0.5
 gitdb2==2.0.5
 GitPython==3.0.3
@@ -265,3 +268,5 @@ xxhash==3.4.1
 yacs==0.1.8
 yarl==1.9.3
 zipp==3.17.0
+zope.event==5.0
+zope.interface==6.1
