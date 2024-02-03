@@ -8,11 +8,12 @@ import configparser
 from embedding_utils import Text2Vector
 import requests
 from generates_methods import GenerateText
-from flask_sockets import Sockets
+from flask_socketio import SocketIO
 import os
 
 app = Flask(__name__)
-sockets = Sockets(app)
+
+socketio = SocketIO(app)
 
 graph = {
     'graph-1':{
@@ -44,16 +45,6 @@ graph = {
         }
     }
 
-# graph  = {
-#     'N1': {'N2': 0.7, 'N4': 0.6},
-#     'N2': {'N1': 0.7, 'N3': 0.3, 'U': 0.9},
-#     'N3': {'N2': 0.3, 'N4': 0.6, 'B': 0.3},
-#     'N4': {'N1': 0.6, 'N3': 0.6, 'U': 0.5, 'B': 0.6},
-#     'B': {'N3': 0.3, 'N4': 0.6, 'A': 0.2},
-#     'U': {'N2': 0.9, 'N4': 0.5},
-#     'A': {'B': 0.2}
-#     }
-
 
 # Function to convert graph data to frontend format
 def prepare_graph_for_frontend(graph_id):
@@ -69,17 +60,52 @@ def prepare_graph_for_frontend(graph_id):
     return {}
 
 
-@app.route('/graph')
+## graph websocket
+@socketio.on('request_graph')
 def graph_socket(ws):
     while not ws.closed:
+        # Wait for a message from the client
         message = ws.receive()
-        print(f"websocket received message: {message}")
         if message:
-            message_data = json.loads(message)
-            graph_id = message_data.get('id')
-            if graph_id and graph_id in graph:
-                frontend_data = prepare_graph_for_frontend(graph_id)
-                ws.send(json.dumps(frontend_data))
+            # Parse the message to get the graph_id
+            data = json.loads(message)
+            graph_id = data.get('graph_id')
+            selected_graph = graph.get(graph_id)
+            
+            if not selected_graph:
+                ws.send(json.dumps({"error": "Graph not found"}))
+            else:
+                nodes = [{'id': key, 'label': key} for key in selected_graph.keys()]
+                edges = [{'from': from_node, 'to': to_node, 'label': str(weight)}
+                         for from_node, connections in selected_graph.items()
+                         for to_node, weight in connections.items()]
+                
+                # Send the graph data back to the client
+                ws.send(json.dumps({
+                    "nodes": nodes,
+                    "edges": edges,
+                }))
+                
+
+## graph http request
+# @app.route('/graph', methods=['GET'])
+# def get_graph():
+#     data = request.get_json()
+#     graph_id = data['graph_id']
+#     selected_graph = graph.get(graph_id)
+#     if not selected_graph:
+#         return jsonify({"error": "Graph not found"}), 404
+
+#     nodes = [{'id': key, 'label': key} for key in selected_graph.keys()]
+#     edges = [{'from': from_node, 'to': to_node, 'label': str(weight)}
+#              for from_node, connections in selected_graph.items()
+#              for to_node, weight in connections.items()]
+#     print("Nodes: ", nodes, "Edges: ", edges)
+#     return jsonify({
+#         "nodes": nodes,
+#         "edges": edges,
+#         })
+
 
 
 api_url = "http://127.0.0.1:5000"
@@ -201,7 +227,7 @@ def simulate_flow():
     # print(f"simulate_flow is called, and the requested data is {data}")
     start_text = data.get('start_text')  # The initial message text
     current_node = data.get('current_node')  # The starting node for the simulation
-    graph_id = data.get('graph_id')  # The ID of the graph to be used
+    graph_id = data.get('id')  # The ID of the graph to be used
     
     # nodes, edges = construct_graph_update(graph)
     # send_update_to_frontend('init', nodes, edges)
