@@ -8,8 +8,7 @@
 
 ## 2. Setup the index mapping in elasticsearch
 ### 2.1. user_sent_messages
-### index, id, file_name, body {node, to, sent_text, sent_text_vector}
-### Run following script in kibana (http://localhost:5601)
+Run following script in kibana (http://localhost:5601)
 
 ```JSON
 PUT /user_sent_messages
@@ -47,7 +46,7 @@ PUT /user_sent_messages
 ```
 
 ### 2.2. user_received_messages
-### index, id, file_name, body {node,received_text_weight, from, received_text, received_text_vector}
+Run following script in kibana (http://localhost:5601)
 
 ```JSON
 PUT user_received_messages
