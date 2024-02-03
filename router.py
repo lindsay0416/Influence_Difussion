@@ -183,14 +183,27 @@ def add_sent_record():
 # Sample Flask route to initiate the simulation
 @app.route('/simulate_flow', methods=['POST'])
 def simulate_flow():
-    data = request.get_json()
-    # print(f"simulate_flow is called, and the requested data is {data}")
-    start_text = data.get('start_text')  # The initial message text
-    current_node = data.get('current_node')  # The starting node for the simulation
-    graph_id = data.get('graph_id')  # The ID of the graph to be used
+    # data = request.get_json()
+    # # print(f"simulate_flow is called, and the requested data is {data}")
+    # start_text = data.get('start_text')  # The initial message text
+    # current_node = data.get('current_node')  # The starting node for the simulation
+    # graph_id = data.get('graph_id')  # The ID of the graph to be used
+    #
+    # # nodes, edges = construct_graph_update(graph)
+    # # send_update_to_frontend('init', nodes, edges)
+    #
+    # if graph_id in graph:
+    #     GenerateText.simulate_message_flow(graph, api_url, start_text, current_node, graph_id)
+    #     return jsonify({"message": "Simulation started"}), 200
+    # else:
+    #     return jsonify({"error": "Invalid graph ID"}), 400
+    start_text = request.form['start_text']
+    current_node = request.form['current_node']
+    graph_id = request.form.get('network-radio')
 
-    # nodes, edges = construct_graph_update(graph)
-    # send_update_to_frontend('init', nodes, edges)
+    # print(f"start_text: {start_text}")
+    # print(f"current_node: {current_node}")
+    # print(f"graph_id: {graph_id}")
 
     if graph_id in graph:
         GenerateText.simulate_message_flow(graph, api_url, start_text, current_node, graph_id)

@@ -11,6 +11,17 @@
         height: 400px;
         border: 1px solid lightgray;
       }
+      .form-row {
+        display: flex;
+        margin-bottom: 10px; /* Adds space between the rows */
+        align-items: center; /* Aligns items vertically */
+      }
+
+      .form-row label {
+        width: 150px; /* Fixed width for labels */
+        margin-right: 10px; /* Adds some space between the label and the input */
+      }
+
     </style>
   </head>
   <body>
@@ -18,33 +29,52 @@
 
     <p id="message"></p>
   </div>
-    <div>
+
+    <form action="/simulate_flow", method="post">
       <input
         type="radio"
         name="network-radio"
-        id="network-radio-1"
+        id="graph-1"
+        value="graph-1"
         onclick="toggleNetwork('network-1')"
       />
       Network 1
       <input
         type="radio"
         name="network-radio"
-        id="network-radio-2"
+        id="graph-2"
+        value="graph-2"
         onclick="toggleNetwork('network-2')"
       />
       Network 2
       <input
         type="radio"
         name="network-radio"
-        id="network-radio-3"
+        id="graph-3"
+        value="graph-3"
         onclick="toggleNetwork('network-3')"
       />
       Network 3
-    </div>
+
+
+      <div class="form-row">
+        <label for="start_text">Message:</label>
+        <textarea  type="text" id="start_text" name="start_text"></textarea>
+      </div>
+      <div class="form-row">
+        <label for="current_node">Starting node:</label>
+        <input type="text" id="current_node" name="current_node">
+      </div>
+
+<!--      <button onclick="startSimulation()">Submit</button>-->
+      <input type="submit" value="Start">
+    </form>
+
 
     <div id="mynetwork"></div>
 
-    <button onclick="startSimulation()">Submit</button>
+
+
 
     <script type="text/javascript">
       // Create a DataSet with initial nodes
@@ -65,18 +95,14 @@
       var ws = new WebSocket("ws://127.0.0.1:5000/graph");
 
       ws.onopen = function () {
-<!--        x=document.getElementById("message");-->
-<!--        x.innerHTML="Connected to the WebSocket server";-->
+        x=document.getElementById("message");
+        x.innerHTML="Connected to the WebSocket server";
         console.log("Connected to the WebSocket server");
       };
       ws.onerror = function (error) {
-<!--        x=document.getElementById("message");-->
-<!--        x.innerHTML="Did not connect to the WebSocket server" + error;-->
         console.error("WebSocket Error: " + error);
       };
       ws.onmessage = function (event) {
-<!--        x=document.getElementById("message");-->
-<!--        x.innerHTML="ws.onmessage";-->
         var message = JSON.parse(event.data);
 
         switch (message.type) {
