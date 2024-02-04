@@ -39,9 +39,9 @@
       });
 
 
-      // Function to send ID via WebSocket
+      // Function to send ID via socketio
       function toggleNetwork(id) {
-          console.error(id + " is selected!");
+          console.log(id + " is selected!");
           socket.emit("message", {'graph': id})
       }
 
@@ -84,7 +84,7 @@
       </div>
       <div class="form-row">
         <label for="start_text">Message:</label>
-        <textarea  type="text" id="start_text" name="start_text"></textarea>
+        <textarea id="start_text" name="start_text"></textarea>
       </div>
       <div class="form-row">
         <label for="current_node">Starting node:</label>

@@ -94,9 +94,9 @@ else:
 # Read API key from config
 config = configparser.ConfigParser()
 config.read('config.ini')
-# api_key = config['openai']['api_key']
+api_key = config['openai']['api_key']
 # Set the OpenAI API key
-openai.api_key = "api_key"
+openai.api_key = api_key
 
 @app.route('/')
 def index():
