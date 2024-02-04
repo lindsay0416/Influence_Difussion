@@ -7,10 +7,11 @@ import configparser
 from embedding_utils import Text2Vector
 import requests
 from generates_methods import GenerateText
-from flask_sockets import Sockets
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
-sockets = Sockets(app)
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app)
 
 graph = {
     'graph-1':{
@@ -66,17 +67,17 @@ def prepare_graph_for_frontend(graph_id):
     return {}
 
 
-@sockets.route('/graph')
-def graph_socket(ws):
-    while not ws.closed:
-        message = ws.receive()
-        print(f"websocket received message: {message}")
-        if message:
-            message_data = json.loads(message)
-            graph_id = message_data.get('id')
-            if graph_id and graph_id in graph:
-                frontend_data = prepare_graph_for_frontend(graph_id)
-                ws.send(json.dumps(frontend_data))
+# @sockets.route('/graph')
+# def graph_socket(ws):
+#     while not ws.closed:
+#         message = ws.receive()
+#         print(f"websocket received message: {message}")
+#         if message:
+#             message_data = json.loads(message)
+#             graph_id = message_data.get('id')
+#             if graph_id and graph_id in graph:
+#                 frontend_data = prepare_graph_for_frontend(graph_id)
+#                 ws.send(json.dumps(frontend_data))
 
 
 api_url = "http://127.0.0.1:5000"
@@ -93,9 +94,9 @@ else:
 # Read API key from config
 config = configparser.ConfigParser()
 config.read('config.ini')
-api_key = config['openai']['api_key']
+# api_key = config['openai']['api_key']
 # Set the OpenAI API key
-openai.api_key = api_key
+openai.api_key = "api_key"
 
 @app.route('/')
 def index():
@@ -179,7 +180,6 @@ def add_sent_record():
 
 
 
-
 # Sample Flask route to initiate the simulation
 @app.route('/simulate_flow', methods=['POST'])
 def simulate_flow():
@@ -212,7 +212,28 @@ def simulate_flow():
         return jsonify({"error": "Invalid graph ID"}), 400
 
 
+@socketio.on('message')
+def handle_message(message):
+    print(f"Received message: {message}")
+    print(f"{message['graph']} is selected.")
+
+    socketio.emit("response", prepare_graph_for_frontend(message['graph']))
+
+
+@socketio.on('connected')
+def handle_message(connected):
+    print(f"{connected['data']}")
+
+    # initialize the graph showing the first one in the data
+    socketio.emit("response", prepare_graph_for_frontend('graph-1'))
+
+
+@socketio.on('connect')
+def connect():
+    print("connect..")
+
+
 if __name__ == '__main__':
 
-    app.run(debug=True)
-    
+    # app.run(debug=True)
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
