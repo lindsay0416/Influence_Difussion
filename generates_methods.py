@@ -59,7 +59,17 @@ class GenerateText:
                 skip_next_round.remove(current_node)
                 continue
 
-            text_to_send = GenerateText.get_generated_text(api_url, text_to_send)
+            # Read user profile text from the corresponding file
+            user_profile_filename = f"user_profile/{current_node}.txt"
+            with open(user_profile_filename, "r") as user_profile_file:
+                user_profile_text = user_profile_file.read()
+            
+            # Include user profile text in the prompt
+            prompt = f"According to the personality {user_profile_text}, how will {current_node} reply to the latest received text: {text}. please generate a possible response with 20 words."
+            print("Prompt: ", prompt)
+
+            # Generate text using the OpenAI ChatCompletion endpoint
+            text_to_send = GenerateText.get_generated_text(api_url, prompt)
             if not text_to_send:
                 print("Text generation failed, ending simulation.")
                 break
@@ -69,12 +79,12 @@ class GenerateText:
                     queue.append((text_to_send, neighbour))
                     # Add sent record
                     senders.add(current_node)
-                    GenerateText.add_record_to_elasticsearch(current_node, neighbour, api_url, text, weight, is_received=False)
+                    GenerateText.add_record_to_elasticsearch(current_node, neighbour, api_url, text_to_send, weight, is_received=False)
                     print("Sent from Node:", current_node, "to Node:", neighbour)
                 
                     # Add received record
                     receivers.add(neighbour)
-                    GenerateText.add_record_to_elasticsearch(current_node, neighbour, api_url, text, weight, is_received=True)
+                    GenerateText.add_record_to_elasticsearch(current_node, neighbour, api_url, text_to_send, weight, is_received=True)
                     print("Received at Node:", neighbour, "from Node:", current_node, "Weight:", weight)
 
                     if weight <= 0.3:

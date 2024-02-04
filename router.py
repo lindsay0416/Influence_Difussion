@@ -26,13 +26,21 @@ graph = {
         'A': {'B': 0.2}
         },
     'graph-2':{
-        'N1': {'N2': 0.7, 'N4': 0.6},
-        'N2': {'N1': 0.7, 'N3': 0.3, 'U': 0.9},
-        'N3': {'N2': 0.3, 'N4': 0.6, 'B': 0.3},
-        'N4': {'N1': 0.6, 'N3': 0.6, 'U': 0.5, 'B': 0.6},
-        'B': {'N3': 0.3, 'N4': 0.6, 'A': 0.2},
-        'U': {'N2': 0.9, 'N4': 0.5},
-        'A': {'B': 0.2}
+        "N1": {"N12": 0.29, "N10": 0.92},
+        "N2": {"N15": 0.31, "N4": 0.95, "N9": 0.76},
+        "N3": {"N15": 0.66, "N4": 0.63, "N7": 0.88},
+        "N4": {"N2": 0.95, "N3": 0.63, "N12": 0.24, "N14": 0.69},
+        "N5": {"N12": 0.14, "N6": 0.89, "N14": 0.95},
+        "N6": {"N5": 0.89},
+        "N7": {"N3": 0.88, "N15": 0.84},
+        "N8": {"N14": 0.77, "N15": 0.43},
+        "N9": {"N2": 0.76, "N13": 0.48, "N12": 0.87},
+        "N10": {"N1": 0.92},
+        "N11": {"N12": 0.79, "N14": 0.83},
+        "N12": {"N1": 0.29, "N4": 0.24, "N5": 0.14, "N9": 0.87, "N11": 0.79},
+        "N13": {"N9": 0.48, "N15": 0.51},
+        "N14": {"N4": 0.69, "N5": 0.95, "N8": 0.77, "N11": 0.83},
+        "N15": {"N2": 0.31, "N3": 0.66, "N7": 0.84, "N8": 0.43, "N13": 0.51}
         },
      'graph-3':{
         'N1': {'N2': 0.7, 'N4': 0.6},
@@ -224,7 +232,6 @@ def add_sent_record():
 @app.route('/simulate_flow', methods=['POST'])
 def simulate_flow():
     data = request.get_json()
-    # print(f"simulate_flow is called, and the requested data is {data}")
     start_text = data.get('start_text')  # The initial message text
     current_node = data.get('current_node')  # The starting node for the simulation
     graph_id = data.get('id')  # The ID of the graph to be used
