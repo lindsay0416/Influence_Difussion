@@ -1,5 +1,6 @@
 
 import requests
+import os
 
 class GenerateText:
     # Function to post data to the /generate_text API and receive the generated text
@@ -83,11 +84,23 @@ class GenerateText:
                     senders.add(current_node)
                     GenerateText.add_record_to_elasticsearch(current_node, neighbour, api_url, text_to_send, weight, is_received=False)
                     print("Sent from Node:", current_node, "to Node:", neighbour)
+
+                     # Store sent message in the node's corresponding text file
+                    sent_message =  f"sent:{text_to_send}"
+                    node_file_path = os.path.join("user_profile", f"{current_node}.txt")
+                    with open(node_file_path, "a") as node_file:
+                        node_file.write(sent_message + "\n")
                 
                     # Add received record
                     receivers.add(neighbour)
                     GenerateText.add_record_to_elasticsearch(current_node, neighbour, api_url, text_to_send, weight, is_received=True)
                     print("Received at Node:", neighbour, "from Node:", current_node, "Weight:", weight)
+
+                    # Store received message in the node's corresponding text file
+                    received_message = f"received:{text_to_send}"
+                    node_file_path = os.path.join("user_profile", f"{neighbour}.txt")
+                    with open(node_file_path, "a") as node_file:
+                        node_file.write(received_message + "\n")
 
                     if weight <= 0.3:
                         skip_next_round.add(neighbour)
