@@ -65,8 +65,10 @@ class GenerateText:
                 user_profile_text = user_profile_file.read()
             
             # Include user profile text in the prompt
-            prompt = f"According to the personality {user_profile_text}, how will {current_node} reply to the latest received text: {text}. please generate a possible response with 20 words."
-            print("Prompt: ", prompt)
+            prompt = f"According to the personality {user_profile_text}, \
+                    how will {current_node} reply to the latest received text: {text}. \
+                    please generate a possible response with 20 words."
+            print("Prompt: ", prompt) 
 
             # Generate text using the OpenAI ChatCompletion endpoint
             text_to_send = GenerateText.get_generated_text(api_url, prompt)
@@ -96,6 +98,12 @@ class GenerateText:
         print("End simulation")
         print("Nodes that never sent any messages:", never_senders)
         print("Nodes that never received any messages:", never_receivers)
+       # Calculate influence coverage
+        total_nodes = len(current_graph)
+        influence_coverage = (total_nodes-len(never_receivers)) / total_nodes
+
+        # Print influence coverage
+        print("Influence coverage:", influence_coverage)
 
         return list(never_senders), list(never_receivers)
 
