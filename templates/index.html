@@ -8,20 +8,7 @@
       integrity="sha384-Gr6Lu2Ajx28mzwyVR8CFkULdCU7kMlZ9UthllibdOSo6qAiN+yXNHqtgdTvFXMT4"
       crossorigin="anonymous"></script>
     <script type="text/javascript">
-      // Create a DataSet with initial nodes
-      var nodes = new vis.DataSet();
-      var edges = new vis.DataSet();
 
-      // Configuration for the Network
-      var container = document.getElementById("mynetwork");
-      var data = {
-        nodes: nodes,
-        edges: edges,
-      };
-      var options = {}; // Specify options as needed
-
-      // Initialize the network
-      var network = new vis.Network(container, data, options);
 
       const socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
 
@@ -42,7 +29,7 @@
       // Function to send ID via socketio
       function toggleNetwork(id) {
           console.log(id + " is selected!");
-          socket.emit("message", {'graph': id})
+          socket.emit('message', {'graph': id})
       }
 
       socket.on('disconnect', function(data){
@@ -78,7 +65,7 @@
 
     <form action="/simulate_flow" method="post">
       <div>
-        <input type="radio" name="network-radio" id="graph-1" value="graph-1" onclick="toggleNetwork('graph-1')" /> Network 1
+        <input type="radio" name="network-radio" id="graph-1" value="graph-1" onclick="toggleNetwork('graph-1')" checked/> Network 1
         <input type="radio" name="network-radio" id="graph-2" value="graph-2" onclick="toggleNetwork('graph-2')" /> Network 2
         <input type="radio" name="network-radio" id="graph-3" value="graph-3" onclick="toggleNetwork('graph-3')" /> Network 3
       </div>
@@ -98,7 +85,23 @@
 
     <div id="mynetwork"></div>
 
+    <script type="text/javascript">
+      // Create a DataSet with initial nodes
+      var nodes = new vis.DataSet();
+      var edges = new vis.DataSet();
 
+      // Configuration for the Network
+      var container = document.getElementById("mynetwork");
+      var data = {
+        nodes: nodes,
+        edges: edges,
+      };
+      var options = {}; // Specify options as needed
+
+      // Initialize the network
+      var network = new vis.Network(container, data, options);
+
+    </script>
 
 
 <!--    <script type="text/javascript">-->
