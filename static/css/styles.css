@@ -1,0 +1,68 @@
+body {font-family: 'Arial', sans-serif; background-color: #e7eef8; margin: 0;}
+
+.navbar {
+    background-color: #ffffff;
+    padding: 10px;
+    text-align: center; /* Center the radio buttons */
+}
+.main {
+    margin-left: 10px; /* Sidebar width + some extra space */
+    padding: 20px;
+    height: calc(100vh - 20px); /* Full height minus navbar height */
+    box-sizing: border-box; /* Include padding in the width */
+    display: flex;
+}
+.sidebar {
+    background-color: #f2f4f8;
+    padding: 10px;
+    width: 300px; /* Fixed sidebar width */
+    float: left;
+    box-sizing: border-box; /* Include padding in the width */
+    height: 100%; /* Full height minus navbar height */
+    flex: 0.15;
+}
+
+.network-diagram {
+    background-color: #ffffff;
+    width: 1500px; /* Full width of its parent */
+    height: 100%; /* Full height of its parent */
+    box-sizing: border-box; /* Include padding in the width and height */
+    float: right;
+    flex: 0.85;
+}
+
+.status-bar {
+    display: none; /* Hide by default */
+    background-color: #d1d8e0;
+    padding: 10px;
+    text-align: center;
+    margin-top: 20px;
+    width: 100%; /* Same as sidebar width */
+    box-sizing: border-box; /* Include padding in the width */
+    color: red;
+}
+
+.button {
+    display: block;
+    width: 100%; /* Make the button expand to the full width of the sidebar */
+    padding: 10px;
+    margin-top: 20px;
+    background-color: #4a76a8;
+    color: white;
+    text-decoration: none;
+    border: none; /* Remove default border */
+    cursor: pointer; /* Change mouse cursor on hover */
+}
+
+.text {
+    width: 100%;
+    margin-top=20px;
+    padding: 10px;
+    margin-top: 20px;
+}
+
+.textarea {
+    width: 100%;
+    height: 250px;
+    padding: 10px;
+}

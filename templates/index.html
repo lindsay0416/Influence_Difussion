@@ -1,5 +1,9 @@
 <html>
   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Simulation Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <script
       type="text/javascript"
       src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
@@ -41,6 +45,7 @@
 
       // Function to send ID via socketio
       function toggleNetwork(id) {
+          document.querySelector('.status-bar').style.display = 'none';
           console.log(id + " is selected!");
           socket.emit('message', {'graph': id})
       }
@@ -55,76 +60,59 @@
 
 
       socket.on('simulate_done', function (data) {
-          document.getElementById("done").innerHTML = "Simulation done!";
+          document.querySelector('.status-bar').style.display = 'block';
       });
 
-    </script>
-    <style type="text/css">
-      #mynetwork {
-        width: 600px;
-        height: 400px;
-        border: 1px solid lightgray;
-      }
-      #done {
-        width: 600px;
-        height: 20px;
-      }
-      .form-row {
-        display: flex;
-        margin-bottom: 10px; /* Adds space between the rows */
-        align-items: center; /* Aligns items vertically */
-      }
-      .form-row label {
-        width: 150px; /* Fixed width for labels */
-        margin-right: 10px; /* Adds some space between the label and the input */
+      function Reset() {
+          location.reload();
       }
 
-    </style>
+    </script>
+
   </head>
   <body>
-  <div>
 
-    <p id="message"></p>
+  <div class="navbar">
+    <div>
+      <input type="radio" name="network-radio" id="graph-1" value="graph-1" onclick="toggleNetwork('graph-1')" checked/> Network 1
+      <input type="radio" name="network-radio" id="graph-2" value="graph-2" onclick="toggleNetwork('graph-2')" /> Network 2
+      <input type="radio" name="network-radio" id="graph-3" value="graph-3" onclick="toggleNetwork('graph-3')" /> Network 3
+    </div>
+  </div>
+  <div class="main">
+      <div class="sidebar">
+        <textarea id="start_text" name="start_text" placeholder="Message" class="textarea"></textarea>
+        <input type="text" id="current_node" name="current_node" placeholder="Starting node" class="text">
+        <button id="Start" class="button">Start</button>
+
+        <button id="Reset" class="button" onclick="Reset()">Reset</button>
+
+        <div id="done" class="status-bar">
+          Simulation done!
+        </div>
+      </div>
+
+
+      <div id="mynetwork" class="network-diagram"></div>
+
   </div>
 
-    <form action="/simulate_flow" method="post">
-      <div>
-        <input type="radio" name="network-radio" id="graph-1" value="graph-1" onclick="toggleNetwork('graph-1')" checked/> Network 1
-        <input type="radio" name="network-radio" id="graph-2" value="graph-2" onclick="toggleNetwork('graph-2')" /> Network 2
-        <input type="radio" name="network-radio" id="graph-3" value="graph-3" onclick="toggleNetwork('graph-3')" /> Network 3
-      </div>
-      <div class="form-row">
-        <label for="start_text">Message:</label>
-        <textarea id="start_text" name="start_text"></textarea>
-      </div>
-      <div class="form-row">
-        <label for="current_node">Starting node:</label>
-        <input type="text" id="current_node" name="current_node">
-      </div>
+  <script type="text/javascript">
+    // Create a DataSet with initial nodes
+    var nodes = new vis.DataSet();
+    var edges = new vis.DataSet();
 
-      <button id="Start">Start</button>
-    </form>
+    // Configuration for the Network
+    var container = document.getElementById("mynetwork");
+    var data = {
+      nodes: nodes,
+      edges: edges,
+    };
+    var options = {}; // Specify options as needed
 
+    // Initialize the network
+    var network = new vis.Network(container, data, options);
 
-    <div id="mynetwork"></div>
-    <div id="done"></div>
-
-    <script type="text/javascript">
-      // Create a DataSet with initial nodes
-      var nodes = new vis.DataSet();
-      var edges = new vis.DataSet();
-
-      // Configuration for the Network
-      var container = document.getElementById("mynetwork");
-      var data = {
-        nodes: nodes,
-        edges: edges,
-      };
-      var options = {}; // Specify options as needed
-
-      // Initialize the network
-      var network = new vis.Network(container, data, options);
-
-    </script>
+  </script>
   </body>
 </html>
