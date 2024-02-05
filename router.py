@@ -196,7 +196,7 @@ def simulate_flow_backend():
     data = request.get_json()
     start_text = data.get('start_text')  # The initial message text
     current_node = data.get('current_node')  # The starting node for the simulation
-    graph_id = data.get('id')  # The ID of the graph to be used
+    graph_id = data.get('graph_id')  # The ID of the graph to be used
     
     # nodes, edges = construct_graph_update(graph)
     # send_update_to_frontend('init', nodes, edges)
