@@ -7,7 +7,9 @@ class GenerateText:
     # Function to post data to the /generate_text API and receive the generated text
     @staticmethod
     def get_generated_text(api_url, prompt):
+        
         response = requests.post(f"{api_url}/generate_text", json={'prompt': prompt})
+        print("************************ response: ", response.json())
         return response.json().get('generated_text', 'No generation result found.') if response.ok else None
     
 
