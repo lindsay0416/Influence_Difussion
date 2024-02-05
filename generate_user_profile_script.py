@@ -33,7 +33,7 @@ def save_generated_text_to_file(generated_text, filename):
         return False
 
 # Call the /generate_text route x times and save the generated text to files
-for i in range(1, 51): 
+for i in range(51, 52): 
     response = requests.post("http://127.0.0.1:5000/generate_text", json={'prompt': prompt})
     
     if response.status_code == 200:

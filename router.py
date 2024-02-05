@@ -14,8 +14,8 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-# socketio = SocketIO(app, cors_allowed_origins='*')
-socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins='*')
+socketio = SocketIO(app, cors_allowed_origins='*')
+# socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins='*')
 
 
 # Function to convert graph data to frontend format
@@ -46,8 +46,6 @@ else:
 # Read API key from config
 config = configparser.ConfigParser()
 config.read('config.ini')
-# api_key = config['openai']['api_key']
-# Set the OpenAI API key
 openai.api_key = "api_key"
 
 @app.route('/')
@@ -167,14 +165,28 @@ def simulate_flow(message):
     print(f"current_node: {current_node}")
     print(f"graph_id: {graph_id}")
 
+    socketio.emit("light_node", {'nid': current_node})
+
     # TODO: after getting the initial information including a message, starting node, and the network,
     #  call a simulation function passing the initial information to start the simulation at backend.
     #  Each time a node is activated, return the node information to light it up.
 
-    nodes = graph[graph_id].keys()
-    for node in nodes:
-        time.sleep(1)
-        socketio.emit("light_node", {'nid': node})
+    if graph_id in graph:
+        GenerateText.simulate_message_flow(graph, api_url, start_text, current_node, graph_id)
+        return jsonify({"message": "Simulation started"}), 200
+    else:
+        return jsonify({"error": "Invalid graph ID"}), 400
+
+    print(f"start_text: {start_text}")
+    print(f"current_node: {current_node}")
+    print(f"graph_id: {graph_id}")
+
+    
+
+    # nodes = graph[graph_id].keys()
+    # for node in nodes:
+    #     time.sleep(1)
+    #     socketio.emit("light_node", {'nid': node})
 
     socketio.emit("simulate_done", "Done")
 
@@ -201,7 +213,6 @@ def connect():
 
 
 if __name__ == '__main__':
+    # app.run(debug=True)
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
 
-    app.run(debug=True)
-    # socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
-    # socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False, log_output=True)

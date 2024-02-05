@@ -1,6 +1,7 @@
 
 import requests
 import os
+# from router import socketio
 
 class GenerateText:
     # Function to post data to the /generate_text API and receive the generated text
@@ -76,6 +77,8 @@ class GenerateText:
             if not text_to_send:
                 print("Text generation failed, ending simulation.")
                 break
+            # text_to_send = "Debug test text to send."
+            # print("text_to_send", text_to_send)
 
             for neighbour, weight in current_graph[current_node].items():
                 if neighbour not in visited_nodes:
@@ -95,6 +98,7 @@ class GenerateText:
                     receivers.add(neighbour)
                     GenerateText.add_record_to_elasticsearch(current_node, neighbour, api_url, text_to_send, weight, is_received=True)
                     print("Received at Node:", neighbour, "from Node:", current_node, "Weight:", weight)
+                    # socketio.emit("light_node", {'nid': neighbour})
 
                     # Store received message in the node's corresponding text file
                     received_message = f"received:{text_to_send}"
@@ -158,3 +162,4 @@ class GenerateText:
         print(f"{'Received' if is_received else 'Sent'}: {document_body}")
         print(response.json())  # Print the response from the API call
         return response
+        

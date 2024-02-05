@@ -85,46 +85,7 @@
         <input type="text" id="current_node" name="current_node" placeholder="Starting node" class="text">
         <button id="Start" class="button">Start</button>
 
-    <form action="/simulate_flow_backend", method="post">
-      <input
-        type="radio"
-        name="network-radio"
-        id="graph-1"
-        value="graph-1"
-        onclick="toggleNetwork('network-1')"
-      />
-      Network 1
-      <input
-        type="radio"
-        name="network-radio"
-        id="graph-2"
-        value="graph-2"
-        onclick="toggleNetwork('network-2')"
-      />
-      Network 2
-      <input
-        type="radio"
-        name="network-radio"
-        id="graph-3"
-        value="graph-3"
-        onclick="toggleNetwork('network-3')"
-      />
-      Network 3
-
-
-      <div class="form-row">
-        <label for="start_text">Message:</label>
-        <textarea  type="text" id="start_text" name="start_text"></textarea>
-      </div>
-      <div class="form-row">
-        <label for="current_node">Starting node:</label>
-        <input type="text" id="current_node" name="current_node">
-      </div>
-
-<!--      <button onclick="startSimulation()">Submit</button>-->
-      <input type="submit" value="Start">
-    </form>
-
+        <button id="Reset" class="button" onclick="Reset()">Reset</button>
 
         <div id="done" class="status-bar">
           Simulation done!
