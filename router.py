@@ -28,20 +28,6 @@ def prepare_graph_for_frontend(graph_id):
         return {'nodes': nodes, 'edges': edges}
     return {}
 
-
-# @sockets.route('/graph')
-# def graph_socket(ws):
-#     while not ws.closed:
-#         message = ws.receive()
-#         print(f"websocket received message: {message}")
-#         if message:
-#             message_data = json.loads(message)
-#             graph_id = message_data.get('id')
-#             if graph_id and graph_id in graph:
-#                 frontend_data = prepare_graph_for_frontend(graph_id)
-#                 ws.send(json.dumps(frontend_data))
-
-
 api_url = "http://127.0.0.1:5000"
 
 # Connect to local Elasticsearch instance
@@ -213,6 +199,6 @@ def connect():
 
 if __name__ == '__main__':
 
-    app.run(debug=True)
-    # socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
+    # app.run(debug=True)
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
     # socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False, log_output=True)
