@@ -192,7 +192,7 @@ def add_sent_record():
 
 # Sample Flask route to initiate the simulation
 @app.route('/simulate_flow', methods=['POST'])
-def simulate_flow():
+def simulate_flow_backend():
     data = request.get_json()
     start_text = data.get('start_text')  # The initial message text
     current_node = data.get('current_node')  # The starting node for the simulation
