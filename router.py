@@ -1,4 +1,5 @@
-import random, json, time
+from flask import Flask, request, jsonify
+import random, json
 from flask import Flask, request, jsonify, render_template
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
@@ -9,6 +10,7 @@ import requests
 from generates_methods import GenerateText
 from flask_socketio import SocketIO
 from graph_data import graph
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -26,20 +28,8 @@ def prepare_graph_for_frontend(graph_id):
                  for from_node, connections in selected_graph.items()
                  for to_node, weight in connections.items()]
         return {'nodes': nodes, 'edges': edges}
+        print({'nodes': nodes, 'edges': edges})
     return {}
-
-
-# @sockets.route('/graph')
-# def graph_socket(ws):
-#     while not ws.closed:
-#         message = ws.receive()
-#         print(f"websocket received message: {message}")
-#         if message:
-#             message_data = json.loads(message)
-#             graph_id = message_data.get('id')
-#             if graph_id and graph_id in graph:
-#                 frontend_data = prepare_graph_for_frontend(graph_id)
-#                 ws.send(json.dumps(frontend_data))
 
 
 api_url = "http://127.0.0.1:5000"
@@ -88,9 +78,6 @@ def generate_text():
     except openai.error.OpenAIError as e:
         return jsonify({"error": str(e)}), 500
 
-    # # Debug: Print the generated text
-    # print("Generated text:", generated_text)
-    
     return jsonify({
         "prompt": prompt,
         "generated_text": generated_text,
@@ -140,6 +127,8 @@ def add_sent_record():
     response = es.index(index=index_name, document=document_body)
     return jsonify(response)
 
+
+# Sample Flask route to initiate the simulation
 @app.route('/simulate_flow', methods=['POST'])
 def simulate_flow_backend():
     data = request.get_json()

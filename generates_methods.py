@@ -1,5 +1,6 @@
 
 import requests
+import os
 
 class GenerateText:
     # Function to post data to the /generate_text API and receive the generated text
