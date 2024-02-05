@@ -30,54 +30,6 @@ def prepare_graph_for_frontend(graph_id):
     return {}
 
 
-## graph websocket
-@socketio.on('request_graph')
-def graph_socket(ws):
-    while not ws.closed:
-        # Wait for a message from the client
-        message = ws.receive()
-        if message:
-            # Parse the message to get the graph_id
-            data = json.loads(message)
-            graph_id = data.get('graph_id')
-            selected_graph = graph.get(graph_id)
-            
-            if not selected_graph:
-                ws.send(json.dumps({"error": "Graph not found"}))
-            else:
-                nodes = [{'id': key, 'label': key} for key in selected_graph.keys()]
-                edges = [{'from': from_node, 'to': to_node, 'label': str(weight)}
-                         for from_node, connections in selected_graph.items()
-                         for to_node, weight in connections.items()]
-                
-                # Send the graph data back to the client
-                ws.send(json.dumps({
-                    "nodes": nodes,
-                    "edges": edges,
-                }))
-                
-
-## graph http request
-# @app.route('/graph', methods=['GET'])
-# def get_graph():
-#     data = request.get_json()
-#     graph_id = data['graph_id']
-#     selected_graph = graph.get(graph_id)
-#     if not selected_graph:
-#         return jsonify({"error": "Graph not found"}), 404
-
-#     nodes = [{'id': key, 'label': key} for key in selected_graph.keys()]
-#     edges = [{'from': from_node, 'to': to_node, 'label': str(weight)}
-#              for from_node, connections in selected_graph.items()
-#              for to_node, weight in connections.items()]
-#     print("Nodes: ", nodes, "Edges: ", edges)
-#     return jsonify({
-#         "nodes": nodes,
-#         "edges": edges,
-#         })
-
-
-
 api_url = "http://127.0.0.1:5000"
 
 # Connect to local Elasticsearch instance
@@ -172,22 +124,6 @@ def add_sent_record():
     # Index in Elasticsearch
     response = es.index(index=index_name, document=document_body)
     return jsonify(response)
-
-
-
-# ## This function is used for test FE.
-# # Sample Flask route to initiate the simulation
-# @app.route('/simulate_flow', methods=['POST'])
-# def simulate_flow():
-#     start_text = request.form['start_text']
-#     current_node = request.form['current_node']
-#     graph_id = request.form.get('network-radio')
-
-#     if graph_id in graph:
-#         GenerateText.simulate_message_flow(graph, api_url, start_text, current_node, graph_id)
-#         return jsonify({"message": "Simulation started"}), 200
-#     else:
-#         return jsonify({"error": "Invalid graph ID"}), 400
 
 
 # Sample Flask route to initiate the simulation
