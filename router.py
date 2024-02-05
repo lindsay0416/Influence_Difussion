@@ -1,4 +1,4 @@
-import random, json
+import random, json, time
 from flask import Flask, request, jsonify, render_template
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
@@ -11,7 +11,7 @@ from flask_socketio import SocketIO
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins='*')
 
 graph = {
     'graph-1':{
@@ -94,9 +94,9 @@ else:
 # Read API key from config
 config = configparser.ConfigParser()
 config.read('config.ini')
-api_key = config['openai']['api_key']
+# api_key = config['openai']['api_key']
 # Set the OpenAI API key
-openai.api_key = api_key
+openai.api_key = "api_key"
 
 @app.route('/')
 def index():
@@ -181,35 +181,56 @@ def add_sent_record():
 
 
 # Sample Flask route to initiate the simulation
-@app.route('/simulate_flow', methods=['POST'])
-def simulate_flow():
-    # data = request.get_json()
-    # # print(f"simulate_flow is called, and the requested data is {data}")
-    # start_text = data.get('start_text')  # The initial message text
-    # current_node = data.get('current_node')  # The starting node for the simulation
-    # graph_id = data.get('graph_id')  # The ID of the graph to be used
-    #
-    # # nodes, edges = construct_graph_update(graph)
-    # # send_update_to_frontend('init', nodes, edges)
-    #
-    # if graph_id in graph:
-    #     GenerateText.simulate_message_flow(graph, api_url, start_text, current_node, graph_id)
-    #     return jsonify({"message": "Simulation started"}), 200
-    # else:
-    #     return jsonify({"error": "Invalid graph ID"}), 400
-    start_text = request.form['start_text']
-    current_node = request.form['current_node']
-    graph_id = request.form.get('network-radio')
+# @app.route('/simulate_flow', methods=['POST'])
+# def simulate_flow():
+#     # data = request.get_json()
+#     # # print(f"simulate_flow is called, and the requested data is {data}")
+#     # start_text = data.get('start_text')  # The initial message text
+#     # current_node = data.get('current_node')  # The starting node for the simulation
+#     # graph_id = data.get('graph_id')  # The ID of the graph to be used
+#     #
+#     # # nodes, edges = construct_graph_update(graph)
+#     # # send_update_to_frontend('init', nodes, edges)
+#     #
+#     # if graph_id in graph:
+#     #     GenerateText.simulate_message_flow(graph, api_url, start_text, current_node, graph_id)
+#     #     return jsonify({"message": "Simulation started"}), 200
+#     # else:
+#     #     return jsonify({"error": "Invalid graph ID"}), 400
+#     start_text = request.form['start_text']
+#     current_node = request.form['current_node']
+#     graph_id = request.form.get('network-radio')
+#
+#     # print(f"start_text: {start_text}")
+#     # print(f"current_node: {current_node}")
+#     # print(f"graph_id: {graph_id}")
+#
+#     if graph_id in graph:
+#         GenerateText.simulate_message_flow(graph, api_url, start_text, current_node, graph_id)
+#         return jsonify({"message": "Simulation started"}), 200
+#     else:
+#         return jsonify({"error": "Invalid graph ID"}), 400
 
-    # print(f"start_text: {start_text}")
-    # print(f"current_node: {current_node}")
-    # print(f"graph_id: {graph_id}")
+@socketio.on('simulate')
+def simulate_flow(message):
+    start_text = message['start_text']
+    current_node = message['current_node']
+    graph_id = message['current_network']
 
-    if graph_id in graph:
-        GenerateText.simulate_message_flow(graph, api_url, start_text, current_node, graph_id)
-        return jsonify({"message": "Simulation started"}), 200
-    else:
-        return jsonify({"error": "Invalid graph ID"}), 400
+    print(f"start_text: {start_text}")
+    print(f"current_node: {current_node}")
+    print(f"graph_id: {graph_id}")
+
+    # TODO: after getting the initial information including a message, starting node, and the network,
+    #  call a simulation function passing the initial information to start the simulation at backend.
+    #  Each time a node is activated, return the node information to light it up.
+
+    nodes = graph[graph_id].keys()
+    for node in nodes:
+        time.sleep(1)
+        socketio.emit("light_node", {'nid': node})
+
+    socketio.emit("simulate_done", "Done")
 
 
 @socketio.on('message')
