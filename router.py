@@ -8,50 +8,12 @@ from embedding_utils import Text2Vector
 import requests
 from generates_methods import GenerateText
 from flask_socketio import SocketIO
+from graph_data import graph
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins='*')
-
-graph = {
-    'graph-1':{
-        'N1': {'N2': 0.7, 'N4': 0.6},
-        'N2': {'N1': 0.7, 'N3': 0.3, 'U': 0.9},
-        'N3': {'N2': 0.3, 'N4': 0.6, 'B': 0.3},
-        'N4': {'N1': 0.6, 'N3': 0.6, 'U': 0.5, 'B': 0.6},
-        'B': {'N3': 0.3, 'N4': 0.6, 'A': 0.2},
-        'U': {'N2': 0.9, 'N4': 0.5},
-        'A': {'B': 0.2}
-        },
-    'graph-2':{
-        'N1': {'N2': 0.7, 'N4': 0.6},
-        'N2': {'N1': 0.7, 'N3': 0.3, 'U': 0.9},
-        'N3': {'N2': 0.3, 'N4': 0.6, 'B': 0.3},
-        'N4': {'N1': 0.6, 'N3': 0.6, 'U': 0.5, 'B': 0.6},
-        'B': {'N3': 0.3, 'N4': 0.6, 'A': 0.2},
-        'U': {'N2': 0.9, 'N4': 0.5},
-        'A': {'B': 0.2}
-        },
-     'graph-3':{
-        'N1': {'N2': 0.7, 'N4': 0.6},
-        'N2': {'N1': 0.7, 'N3': 0.3, 'U': 0.9},
-        'N3': {'N2': 0.3, 'N4': 0.6, 'B': 0.3},
-        'N4': {'N1': 0.6, 'N3': 0.6, 'U': 0.5, 'B': 0.6},
-        'B': {'N3': 0.3, 'N4': 0.6, 'A': 0.2},
-        'U': {'N2': 0.9, 'N4': 0.5},
-        'A': {'B': 0.2}
-        }
-    }
-
-# graph  = {
-#     'N1': {'N2': 0.7, 'N4': 0.6},
-#     'N2': {'N1': 0.7, 'N3': 0.3, 'U': 0.9},
-#     'N3': {'N2': 0.3, 'N4': 0.6, 'B': 0.3},
-#     'N4': {'N1': 0.6, 'N3': 0.6, 'U': 0.5, 'B': 0.6},
-#     'B': {'N3': 0.3, 'N4': 0.6, 'A': 0.2},
-#     'U': {'N2': 0.9, 'N4': 0.5},
-#     'A': {'B': 0.2}
-#     }
+# socketio = SocketIO(app, cors_allowed_origins='*')
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins='*')
 
 
 # Function to convert graph data to frontend format
@@ -178,21 +140,32 @@ def add_sent_record():
     response = es.index(index=index_name, document=document_body)
     return jsonify(response)
 
-
-# Sample Flask route to initiate the simulation
 @app.route('/simulate_flow', methods=['POST'])
 def simulate_flow_backend():
     data = request.get_json()
-    # print(f"simulate_flow is called, and the requested data is {data}")
     start_text = data.get('start_text')  # The initial message text
     current_node = data.get('current_node')  # The starting node for the simulation
     graph_id = data.get('graph_id')  # The ID of the graph to be used
+    
+    # nodes, edges = construct_graph_update(graph)
+    # send_update_to_frontend('init', nodes, edges)
     
     if graph_id in graph:
         GenerateText.simulate_message_flow(graph, api_url, start_text, current_node, graph_id)
         return jsonify({"message": "Simulation started"}), 200
     else:
         return jsonify({"error": "Invalid graph ID"}), 400
+
+    print(f"start_text: {start_text}")
+    print(f"current_node: {current_node}")
+    print(f"graph_id: {graph_id}")
+
+    if graph_id in graph:
+        GenerateText.simulate_message_flow(graph, api_url, start_text, current_node, graph_id)
+        return jsonify({"message": "Simulation started"}), 200
+    else:
+        return jsonify({"error": "Invalid graph ID"}), 400
+
 
 
 @socketio.on('simulate')
@@ -240,5 +213,6 @@ def connect():
 
 if __name__ == '__main__':
 
-    # app.run(debug=True)
-    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
+    app.run(debug=True)
+    # socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
+    # socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False, log_output=True)
