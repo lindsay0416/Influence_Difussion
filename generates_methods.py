@@ -1,17 +1,68 @@
 
 import requests
+from flask import Flask, request, jsonify, render_template
 import os
-# from router import socketio
+import openai
+import configparser
+from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import NotFoundError
+from embedding_utils import Text2Vector
+
+
+
+# Read API key from config
+config = configparser.ConfigParser()
+config.read('config.ini')
+api_key = config['openai']['api_key']
+# Set the OpenAI API key
+openai.api_key = api_key
+
+# print(api_key)
+
+# Connect to local Elasticsearch instance
+es = Elasticsearch("http://localhost:9200")
+
+# Check if Elasticsearch is running
+if es.ping():
+    print("Connected to Elasticsearch")
+else:
+    print("Could not connect to Elasticsearch")
 
 class GenerateText:
+    # @staticmethod
+    # def es_client():
+    #     # Check if Elasticsearch is running
+    #     es = Elasticsearch("http://localhost:9200")
+
+    #     if es.ping():
+    #         print("Connected to Elasticsearch")
+    #     else:
+    #         print("Could not connect to Elasticsearch")
+    #     # Assuming you have a method or a property to get the Elasticsearch client
+    #     # This is a placeholder. You need to replace it with actual code to get your Elasticsearch client instance.
+    #     return es
+
     # Function to post data to the /generate_text API and receive the generated text
     @staticmethod
-    def get_generated_text(api_url, prompt):
+    def get_generated_text(prompt):
+        generated_text = ""
+        # prompt = data['prompt']
+        try:
+            # Generate text using the OpenAI ChatCompletion endpoint
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            # Extract the generated text and remove newlines and extra white spaces
+            generated_text = response.choices[0].message.content.strip().replace("\n\n", " ").replace("\n", " ")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+        return generated_text, prompt
         
-        response = requests.post(f"{api_url}/generate_text", json={'prompt': prompt})
-        print("************************ response: ", response.json())
-        return response.json().get('generated_text', 'No generation result found.') if response.ok else None
-    
 
     @staticmethod
     # Check the id of a document in each index.
@@ -34,7 +85,7 @@ class GenerateText:
         return next_id
 
     @staticmethod
-    def simulate_message_flow(graphs, api_url, start_text, current_node, graph_id):
+    def simulate_message_flow(graphs, start_text, current_node, graph_id, socketio):
         if graph_id not in graphs:
             print(f"Graph ID {graph_id} not found.")
             return
@@ -75,19 +126,26 @@ class GenerateText:
             print("Prompt: ", prompt) 
 
             # Generate text using the OpenAI ChatCompletion endpoint
-            text_to_send = GenerateText.get_generated_text(api_url, prompt)
+            text_to_send, given_text = GenerateText.get_generated_text(prompt)
+            print("text_to_send", text_to_send)
             if not text_to_send:
                 print("Text generation failed, ending simulation.")
                 break
+            # response = requests.post(f"{api_url}/generate_text", json={'prompt': prompt}, timeout=(5,10))
+            # print("response", response)
             # text_to_send = "Debug test text to send."
             # print("text_to_send", text_to_send)
 
             for neighbour, weight in current_graph[current_node].items():
+                print("***********", neighbour, weight)
                 if neighbour not in visited_nodes:
+                    # socketio.emit("light_node", {'nid': neighbour})
+                    print("visited Node: ", visited_nodes)
+                    print("neighbour: ", neighbour)
                     queue.append((text_to_send, neighbour))
                     # Add sent record
                     senders.add(current_node)
-                    GenerateText.add_record_to_elasticsearch(current_node, neighbour, api_url, text_to_send, weight, is_received=False)
+                    GenerateText.add_record_to_elasticsearch(current_node, neighbour, text_to_send, weight, is_received=False)
                     print("Sent from Node:", current_node, "to Node:", neighbour)
 
                      # Store sent message in the node's corresponding text file
@@ -98,9 +156,10 @@ class GenerateText:
                 
                     # Add received record
                     receivers.add(neighbour)
-                    GenerateText.add_record_to_elasticsearch(current_node, neighbour, api_url, text_to_send, weight, is_received=True)
+                    GenerateText.add_record_to_elasticsearch(current_node, neighbour, text_to_send, weight, is_received=True)
                     print("Received at Node:", neighbour, "from Node:", current_node, "Weight:", weight)
-                    # socketio.emit("light_node", {'nid': neighbour})
+                    print(receivers.add(neighbour), neighbour)
+                    socketio.emit("light_node", {'nid': neighbour})
 
                     # Store received message in the node's corresponding text file
                     received_message = f"received:{text_to_send}"
@@ -126,14 +185,29 @@ class GenerateText:
 
         return list(never_senders), list(never_receivers)
 
+    # Add received records to elasticsearch
     @staticmethod
-    # add received and sent records to elasticsearch
-    def add_record_to_elasticsearch(node, connected_node, api_url, text, weight, is_received):
-        # Define the API endpoint
-        endpoint = '/add_received_record' if is_received else '/add_sent_record'
-        url = api_url + endpoint
+    def add_received_record(index_name, document_body):
+        # es = GenerateText.es_client()  # Get Elasticsearch client
+        received_text = document_body.get('received_text')
+        if received_text:
+            document_body['received_text_vector'] = Text2Vector.get_embedding(received_text)
+        response = es.index(index=index_name, document=document_body)
+        return response  # Return raw response or process as needed
 
-        # Prepare the document body
+
+    @staticmethod
+    def add_sent_record(index_name, document_body):
+        # es = GenerateText.es_client()  # Get Elasticsearch client
+        sent_text = document_body.get('sent_text')
+        if sent_text:
+            document_body['sent_text_vector'] = Text2Vector.get_embedding(sent_text)
+        response = es.index(index=index_name, document=document_body)
+        return response  # Return raw response or process as needed
+
+        
+    @staticmethod
+    def add_record_to_elasticsearch(node, connected_node, text, weight, is_received):
         document_body = {
             "node": connected_node if is_received else node,
             "from": node if is_received else None,
@@ -142,26 +216,17 @@ class GenerateText:
             "sent_text": text if not is_received else None,
             "received_text_weight": str(weight) if is_received else None,
         }
-
-        # Remove None fields
         document_body = {k: v for k, v in document_body.items() if v is not None}
-
-        # Set the correct index name
         index_name = "received_text_test01" if is_received else "sent_text_test01"
 
-        # Prepare request data
-        request_data = {
-            "index": index_name,
-            "file_name": "_doc",
-            "body": document_body
-        }
+        # Decide whether to add a received or sent record based on is_received flag
+        if is_received:
+            response = GenerateText.add_received_record(index_name, document_body)
+        else:
+            response = GenerateText.add_sent_record(index_name, document_body)
 
-        # Make the POST request to the API
-        response = requests.post(url, json=request_data)
-
-        # print(f"Sent from Node: {node} to Node: {connected_node}")
-        # print(f"Received at Node: {connected_node} from Node: {node}, Weight: {weight}")
+        # Print or log the response as needed
         print(f"{'Received' if is_received else 'Sent'}: {document_body}")
-        print(response.json())  # Print the response from the API call
-        return response
+        print("Response from Elasticsearch:", response)
+        return response  # Return raw response or process as needed
         

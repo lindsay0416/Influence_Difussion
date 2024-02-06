@@ -28,6 +28,7 @@
         });
 
       const socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+      // const socket = io.connect(location.protocol + '//' + document.domain + ':5555');
 
       socket.on('connect', function (data) {
           socket.emit('connected', { data: 'I\'m connected!'});
@@ -55,6 +56,7 @@
       });
 
       socket.on('light_node', function (data) {
+          console.log("light node")
           nodes.update({ "id": data.nid, "color": {background: 'red', border: 'red'} });
       });
 
