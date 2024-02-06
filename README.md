@@ -11,7 +11,7 @@
 Run following script in kibana (http://localhost:5601)
 
 ```JSON
-PUT /user_sent_messages
+PUT /sent_text_test01
 
 {
   "mapping": {
@@ -49,7 +49,7 @@ PUT /user_sent_messages
 Run following script in kibana (http://localhost:5601)
 
 ```JSON
-PUT user_received_messages
+PUT received_text_test01
 
 {
   "mapping": {
