@@ -104,7 +104,7 @@ class GenerateText:
                 # Include user profile text in the prompt
                 prompt = f"According to the personality {user_profile_text}, \
                         how will {current_node} reply to the latest received text: {text}. \
-                        please generate a possible response with 20 words."
+                        please generate a possible response."
                 print("Prompt: ", prompt)
 
                 # Generate text using the OpenAI ChatCompletion endpoint
