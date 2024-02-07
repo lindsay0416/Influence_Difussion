@@ -51,9 +51,9 @@
           socket.emit('message', {'graph': id})
       }
 
-      socket.on('disconnect', function(data){
-          socket.emit('message', { 'data': 'I\'m disconnected!' });
-      });
+<!--      socket.on('disconnect', function(data){-->
+<!--          socket.emit('message', { 'data': 'I\'m disconnected!' });-->
+<!--      });-->
 
       socket.on('light_node', function (data) {
           console.log("light node")

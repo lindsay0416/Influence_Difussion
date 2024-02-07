@@ -69,98 +69,112 @@ class GenerateText:
             print(f"Graph ID {graph_id} not found.")
             return
 
-        current_graph = graphs[graph_id]
-        visited_nodes = set()
-        skip_next_round = set()
-        senders = set()
-        receivers = set()
+            # Ensure the conversation_flow directory exists
+        os.makedirs("conversation_flow", exist_ok=True)
 
-        print("Start simulation")
-        text_to_send = start_text
+        for round_num in range(1, 11):  # Loop 10 times
+            current_graph = graphs[graph_id]
+            visited_nodes = set()
+            skip_next_round = set()
+            senders = set()
+            receivers = set()
 
-        queue = [(start_text, current_node)]
+            print(f"Start simulation round {round_num}")
+            queue = [(start_text, current_node)]
+            round_conversation = []  # Collect conversation for this round
 
-        while queue:
-            text, current_node = queue.pop(0)
+            while queue:
+                text, current_node = queue.pop(0)
 
-            if current_node not in current_graph:
-                print(f"Node {current_node} not found in graph {graph_id}.")
-                continue
+                if current_node not in current_graph:
+                    print(f"Node {current_node} not found in graph {graph_id}.")
+                    continue
 
-            visited_nodes.add(current_node)
+                visited_nodes.add(current_node)
 
-            if current_node in skip_next_round:
-                skip_next_round.remove(current_node)
-                continue
+                if current_node in skip_next_round:
+                    skip_next_round.remove(current_node)
+                    continue
 
-            # Read user profile text from the corresponding file
-            user_profile_filename = f"user_profile/{current_node}.txt"
-            with open(user_profile_filename, "r") as user_profile_file:
-                user_profile_text = user_profile_file.read()
+                # Read user profile text from the corresponding file
+                user_profile_filename = f"user_profile/{current_node}.txt"
+                with open(user_profile_filename, "r", encoding='utf-8') as user_profile_file:
+                    user_profile_text = user_profile_file.read()
 
-            # Include user profile text in the prompt
-            prompt = f"According to the personality {user_profile_text}, \
-                    how will {current_node} reply to the latest received text: {text}. \
-                    please generate a possible response with 20 words."
-            print("Prompt: ", prompt)
+                # Include user profile text in the prompt
+                prompt = f"According to the personality {user_profile_text}, \
+                        how will {current_node} reply to the latest received text: {text}. \
+                        please generate a possible response with 20 words."
+                print("Prompt: ", prompt)
 
-            # Generate text using the OpenAI ChatCompletion endpoint
-            text_to_send, given_text = GenerateText.get_generated_text(prompt)
-            print("text_to_send", text_to_send)
-            if not text_to_send:
-                print("Text generation failed, ending simulation.")
-                break
+                # Generate text using the OpenAI ChatCompletion endpoint
+                text_to_send, given_text = GenerateText.get_generated_text(prompt)
+                print("text_to_send", text_to_send)
+                if not text_to_send:
+                    print("Text generation failed, ending simulation.")
+                    break
 
-            for neighbour, weight in current_graph[current_node].items():
-                print("***********", neighbour, weight)
-                if neighbour not in visited_nodes:
-                    # socketio.emit("light_node", {'nid': neighbour})
-                    print("visited Node: ", visited_nodes)
-                    print("neighbour: ", neighbour)
-                    queue.append((text_to_send, neighbour))
-                    # Add sent record
-                    senders.add(current_node)
-                    GenerateText.add_record_to_elasticsearch(current_node, neighbour, text_to_send, weight,
-                                                             is_received=False)
-                    # print("Sent from Node:", current_node, "to Node:", neighbour)
-                    print("Text sent from Node: ", current_node, "to: ", neighbour, "Sent text: ", text_to_send)
+                for neighbour, weight in current_graph[current_node].items():
+                    print("***********", neighbour, weight)
+                    if neighbour not in visited_nodes:
+                        # socketio.emit("light_node", {'nid': neighbour})
+                        print("visited Node: ", visited_nodes)
+                        print("neighbour: ", neighbour)
+                        queue.append((text_to_send, neighbour))
+                        # Add sent record
+                        senders.add(current_node)
+                        # GenerateText.add_record_to_elasticsearch(current_node, neighbour, text_to_send, weight,
+                        #                                          is_received=False)
+                        # print("Sent from Node:", current_node, "to Node:", neighbour)
+                        print("Text sent from Node: ", current_node, "to: ", neighbour, "Sent text: ", text_to_send)
 
-                    # Store sent message in the node's corresponding text file
-                    sent_message = f"sent:{text_to_send}"
-                    node_file_path = os.path.join("user_profile", f"{current_node}.txt")
-                    with open(node_file_path, "a") as node_file:
-                        node_file.write(sent_message + "\n")
+                        # Store sent message in the node's corresponding text file
+                        sent_message = f"sent:{text_to_send}"
+                        node_file_path = os.path.join("user_profile", f"{current_node}.txt")
+                        with open(node_file_path, "a") as node_file:
+                            node_file.write(sent_message + "\n")
 
-                    # Add received record
-                    receivers.add(neighbour)
-                    GenerateText.add_record_to_elasticsearch(current_node, neighbour, text_to_send, weight,
-                                                             is_received=True)
-                    print("Text Received from Node: ", neighbour, "to: ", current_node, "Weight:", weight,
-                          "received text: ", text_to_send)
-                    print(receivers.add(neighbour), neighbour)
-                    socketio.emit("light_node", {'nid': neighbour})
+                        # Add received record
+                        receivers.add(neighbour)
+                        # GenerateText.add_record_to_elasticsearch(current_node, neighbour, text_to_send, weight,
+                        #                                          is_received=True)
+                        print("Text Received from Node: ", neighbour, "to: ", current_node, "Weight:", weight,
+                              "received text: ", text_to_send)
+                        print(receivers.add(neighbour), neighbour)
+                        socketio.emit("light_node", {'nid': neighbour})
 
-                    # Store received message in the node's corresponding text file
-                    received_message = f"received:{text_to_send}"
-                    node_file_path = os.path.join("user_profile", f"{neighbour}.txt")
-                    with open(node_file_path, "a") as node_file:
-                        node_file.write(received_message + "\n")
+                        # Append the generated text to the round_conversation list
+                        round_conversation.append(f"{text_to_send}")
 
-                    if weight <= 0.3:
-                        skip_next_round.add(neighbour)
+                        # Store received message in the node's corresponding text file
+                        received_message = f"received:{text_to_send}"
+                        node_file_path = os.path.join("user_profile", f"{neighbour}.txt")
+                        with open(node_file_path, "a") as node_file:
+                            node_file.write(received_message + "\n")
 
-        # Print nodes that never sent/received messages
-        never_senders = set(current_graph.keys()) - senders
-        never_receivers = set(current_graph.keys()) - receivers
-        print("End simulation")
-        print("Nodes that never sent any messages:", never_senders)
-        print("Nodes that never received any messages:", never_receivers)
-        # Calculate influence coverage
-        total_nodes = len(current_graph)
-        influence_coverage = (total_nodes - len(never_receivers)) / total_nodes
+                        if weight <= 0.3:
+                            skip_next_round.add(neighbour)
 
-        # Print influence coverage
-        print("Influence coverage:", influence_coverage)
+            # At the end of the round, save the conversation to a file
+            round_file_path = os.path.join("conversation_flow", f"round{round_num:02}.txt")
+            with open(round_file_path, "w", encoding='utf-8') as round_file:
+                round_file.write("\n".join(round_conversation))
+
+
+            # Print nodes that never sent/received messages
+            never_senders = set(current_graph.keys()) - senders
+            never_receivers = set(current_graph.keys()) - receivers
+            print("End simulation")
+            print("Nodes that never sent any messages:", never_senders)
+            print("Nodes that never received any messages:", never_receivers)
+            # Calculate influence coverage
+            total_nodes = len(current_graph)
+            influence_coverage = (total_nodes - len(never_receivers)) / total_nodes
+
+            # Print influence coverage
+            print("Influence coverage:", influence_coverage)
+            # You might want to add logic here to print summary statistics for the round
+            print(f"End simulation round {round_num}")
 
         return list(never_senders), list(never_receivers)
 
