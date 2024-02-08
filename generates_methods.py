@@ -72,7 +72,7 @@ class GenerateText:
             # Ensure the conversation_flow directory exists
         os.makedirs("conversation_flow", exist_ok=True)
 
-        for round_num in range(1, 2):  # Loop 10 times
+        for round_num in range(1, 4):  # Loop 10 times
             current_graph = graphs[graph_id]
             visited_nodes = set()
             skip_next_round = set()

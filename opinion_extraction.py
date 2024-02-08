@@ -33,7 +33,7 @@ def summarize_chunks(chunks, max_length=8, min_length=30):
         # Guard against empty chunks
         if not chunk.strip():
             continue
-        summary = summarizer(chunk, max_length=8, min_length=5, do_sample=False)
+        summary = summarizer(chunk, max_length=15, min_length=5, do_sample=False)
         summaries.append(summary[0]['summary_text'])
     combined_summary = ' '.join(summaries)
     return combined_summary
@@ -46,7 +46,7 @@ def summarize_file(file_path):
 
 # Loop through the files and summarize each
 for i in range(1, 11):
-    file_name = f"round{i:02}.txt"
+    file_name = f"round{i}.txt"
     file_path = os.path.join(directory_path, file_name)
     if os.path.exists(file_path):
         print(f"Summarizing {file_name}...")

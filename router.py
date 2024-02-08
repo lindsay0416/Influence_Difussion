@@ -86,7 +86,7 @@ def handle_message(connected):
     print(f"{connected['data']}")
 
     # initialize the graph showing the first one in the data
-    socketio.emit("response", prepare_graph_for_frontend('graph-1'))
+    socketio.emit("response", prepare_graph_for_frontend('graph'))
 
 
 @socketio.on('connect')
