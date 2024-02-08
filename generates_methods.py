@@ -72,7 +72,7 @@ class GenerateText:
             # Ensure the conversation_flow directory exists
         os.makedirs("conversation_flow", exist_ok=True)
 
-        for round_num in range(1, 11):  # Loop 10 times
+        for round_num in range(1, 2):  # Loop 10 times
             current_graph = graphs[graph_id]
             visited_nodes = set()
             skip_next_round = set()
@@ -104,7 +104,8 @@ class GenerateText:
                 # Include user profile text in the prompt
                 prompt = f"According to the personality {user_profile_text}, \
                         how will {current_node} reply to the latest received text: {text}. \
-                        please generate a possible response."
+                        please generate a possible response \
+                        within 30 words."
                 print("Prompt: ", prompt)
 
                 # Generate text using the OpenAI ChatCompletion endpoint
@@ -128,11 +129,11 @@ class GenerateText:
                         # print("Sent from Node:", current_node, "to Node:", neighbour)
                         print("Text sent from Node: ", current_node, "to: ", neighbour, "Sent text: ", text_to_send)
 
-                        # Store sent message in the node's corresponding text file
-                        sent_message = f"sent:{text_to_send}"
-                        node_file_path = os.path.join("user_profile", f"{current_node}.txt")
-                        with open(node_file_path, "a") as node_file:
-                            node_file.write(sent_message + "\n")
+                        # # Store sent message in the node's corresponding text file
+                        # sent_message = f"sent:{text_to_send}"
+                        # node_file_path = os.path.join("user_profile", f"{current_node}.txt")
+                        # with open(node_file_path, "a") as node_file:
+                        #     node_file.write(sent_message + "\n")
 
                         # Add received record
                         receivers.add(neighbour)
@@ -143,20 +144,20 @@ class GenerateText:
                         print(receivers.add(neighbour), neighbour)
                         socketio.emit("light_node", {'nid': neighbour})
 
-                        # Append the generated text to the round_conversation list
+                        #Append the generated text to the round_conversation list
                         round_conversation.append(f"{text_to_send}")
 
-                        # Store received message in the node's corresponding text file
-                        received_message = f"received:{text_to_send}"
-                        node_file_path = os.path.join("user_profile", f"{neighbour}.txt")
-                        with open(node_file_path, "a") as node_file:
-                            node_file.write(received_message + "\n")
+                        # # Store received message in the node's corresponding text file
+                        # received_message = f"received:{text_to_send}"
+                        # node_file_path = os.path.join("user_profile", f"{neighbour}.txt")
+                        # with open(node_file_path, "a") as node_file:
+                        #     node_file.write(received_message + "\n")
 
                         if weight <= 0.3:
                             skip_next_round.add(neighbour)
 
             # At the end of the round, save the conversation to a file
-            round_file_path = os.path.join("conversation_flow", f"round{round_num:02}.txt")
+            round_file_path = os.path.join("conversation_flow", f"round{round_num}.txt")
             with open(round_file_path, "w", encoding='utf-8') as round_file:
                 round_file.write("\n".join(round_conversation))
 
