@@ -1,0 +1,37 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Data
+labels = ['Enhanced Traffic Flow', 'Economic Growth', 'Environmental Improvements',
+          'Safety Enhancements', 'Short-term Traffic Disruptions', 'Financial Considerations',
+          'Environmental and Community Impact']
+averages = [
+    [0, 0, 0, 0, 0.17082573198631743, 0.16808667467236937, 0.08867768160458644],
+    [0, 0, 0, 0, 0.2302452677020931, 0.28317953619047453, 0.1225],
+    [0.1879838223393469, 0.07030492086459506, 0.06804963087832473, 0.03574720087172335, 0.13899042045098578, 0.21509143492055313, 0.26592617011394365],
+    [0.27020682863926404, 0.1509000452121099, 0.26259621627597807, 0.38764109422168797, 0.2077342909798754, 0.42505523846178084, 0.2172862714295712],
+    [0.25913008684938627, 0.15648917026677844, 0.26259621627597807, 0.4964968820278432, 0.309008745557929, 0.44537388496571323, 0.47630685657556543],
+    [0.17658789117918572, 0.1943498907289551, 0.3871959040567256, 0.5060510855718533, 0.32573035552747504, 0.5212214629846595, 0.45439882361349715],
+    [0.18245455054355206, 0.1943498907289551, 0.3916491872628638, 0.5228087304966818, 0.36135694958054226, 0.5407519962078301, 0.45188665408642326],
+    [0.21896978115803933, 0.22406318131959685, 0.42331576814181904, 0.5228087304966818, 0.3851421139028632, 0.5372936795215444, 0.43866615210175514],
+    [0.25896978115803933, 0.27406318131959685, 0.49331576814181904, 0.6828087304966818, 0.41496941693112674, 0.5468888086196532, 0.441766615210175514]
+]
+
+# Convert averages to a numpy array for easier manipulation
+data = np.array(averages)
+
+# Plotting
+plt.figure(figsize=(14, 8))
+colors = plt.cm.tab10(np.linspace(0, 1, len(data)))  # Generating colors from colormap
+for i, avg in enumerate(data):
+    plt.plot(labels, avg, marker='o', color=colors[i])
+
+# Customizing the plot
+plt.title('Average Opinion Score Change Trend for Each Aspect (Scenario 1)', fontsize=16)
+plt.ylabel('Score', fontsize=14)
+plt.xticks(rotation=45, ha="right")
+plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+plt.legend(['Iteration' + str(i+1) for i in range(len(data))], loc='upper left', title="Iterations")
+
+plt.tight_layout()
+plt.show()
