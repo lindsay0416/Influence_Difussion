@@ -5,3 +5,8 @@ config.ini
 user_profile
 difussionenv
 conversation_flow
+Aspects_Opinion_analyse/Scenario01
+Aspects_Opinion_analyse/Scenario02
+Aspects_Opinion_analyse/Scenario03
+Aspects_Opinion_analyse/corenlp_server-f9e147ca8e8a40f2.props
+Aspects

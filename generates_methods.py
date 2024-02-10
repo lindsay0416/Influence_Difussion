@@ -72,7 +72,7 @@ class GenerateText:
             # Ensure the conversation_flow directory exists
         os.makedirs("conversation_flow", exist_ok=True)
 
-        for round_num in range(1, 4):  # Loop 10 times
+        for round_num in range(1, 9):  # Loop 10 times
             current_graph = graphs[graph_id]
             visited_nodes = set()
             skip_next_round = set()
@@ -103,10 +103,10 @@ class GenerateText:
 
                 # Include user profile text in the prompt
                 prompt = f"According to the personality {user_profile_text}, \
-                        how will {current_node} reply to the latest received text: {text}. \
+                        how will {current_node} reply to the latest received text: {text + start_text}. \
                         please generate a possible response \
                         within 30 words."
-                print("Prompt: ", prompt)
+                # print("Prompt: ", prompt)
 
                 # Generate text using the OpenAI ChatCompletion endpoint
                 text_to_send, given_text = GenerateText.get_generated_text(prompt)
@@ -116,16 +116,15 @@ class GenerateText:
                     break
 
                 for neighbour, weight in current_graph[current_node].items():
-                    print("***********", neighbour, weight)
+                    print("***** neighbour, weight *****", neighbour, weight)
                     if neighbour not in visited_nodes:
-                        # socketio.emit("light_node", {'nid': neighbour})
                         print("visited Node: ", visited_nodes)
                         print("neighbour: ", neighbour)
                         queue.append((text_to_send, neighbour))
                         # Add sent record
                         senders.add(current_node)
-                        # GenerateText.add_record_to_elasticsearch(current_node, neighbour, text_to_send, weight,
-                        #                                          is_received=False)
+                        GenerateText.add_record_to_elasticsearch(current_node, neighbour, text_to_send, weight,
+                                                                 is_received=False)
                         # print("Sent from Node:", current_node, "to Node:", neighbour)
                         print("Text sent from Node: ", current_node, "to: ", neighbour, "Sent text: ", text_to_send)
 
@@ -137,11 +136,11 @@ class GenerateText:
 
                         # Add received record
                         receivers.add(neighbour)
-                        # GenerateText.add_record_to_elasticsearch(current_node, neighbour, text_to_send, weight,
-                        #                                          is_received=True)
+                        GenerateText.add_record_to_elasticsearch(current_node, neighbour, text_to_send, weight,
+                                                                 is_received=True)
                         print("Text Received from Node: ", neighbour, "to: ", current_node, "Weight:", weight,
                               "received text: ", text_to_send)
-                        print(receivers.add(neighbour), neighbour)
+                        # print(receivers.add(neighbour), neighbour)
                         socketio.emit("light_node", {'nid': neighbour})
 
                         #Append the generated text to the round_conversation list
