@@ -1,0 +1,89 @@
+Technical Proficiency: Aspects could include specific programming languages ("Python", "R", "SQL") and general areas like "machine learning algorithms".
+
+Data Wrangling and Visualization: Aspects might include "data cleaning", "data wrangling challenges", and "visualization tools".
+
+Statistical Savvy: This could be broken down into "statistical questions", "key concepts", and "statistical traps".
+
+Machine Learning Mastery: Aspects could be "machine learning topics", "projects", and "applications".
+
+Behavioral Balance: Here, aspects might include "technical expertise", "soft skills", and "team player".
+
+Industry Insight: Aspects could involve "industry-specific trends" and "news".
+
+Portfolio Power: Aspects would be "portfolio" and types of "projects".
+
+The Unexpected: This would relate to "out-of-left-field questions" or "tasks".
+
+aspects = [
+    "include specific programming languages Python, R, SQL and general areas like machine learning algorithms",
+    "data cleaning, data wrangling challenges, and visualization tools.",
+    "statistical questions, key concepts and statistical traps.",
+    "Machine Learning Mastery",
+    "Industry Insight",
+    "Portfolio Power",
+    "out of left field questions or tasks",
+    "Behavioral Balance, technical expertise, soft skills, and team player"
+]
+
+
+summaries01 = {
+ "include specific programming languages Python, R, SQL and general areas like machine learning algorithms":
+        [
+            "Brush up on Python, R, SQL, and machine learning."
+            "Be confident in your technical skills."
+            "Stay confident and showcase your technical skills."
+            "Your preparation so far shows great dedication."
+            "You're on the right track! Keep focusing on technical skills like Python, R, SQL, and machine learning."
+            "Remember to showcase your strong technical skills in Python, R, and SQL."
+        ],
+ "data cleaning, data wrangling challenges, and visualization tools.":
+        [
+            "Show your data wrangling and visualization skills."
+            "Share impressive data wrangling challenges and unique visualization tools."
+            "Make sure to showcase your data wrangling challenges and impressive projects during the interview."
+        ],
+    "statistical questions, key concepts and statistical traps.":
+        [
+
+
+        ],
+    "Machine Learning Mastery":
+        [
+            "Brush up on Python, R, SQL, and machine learning."
+            "Show your data wrangling and visualization skills, statistical knowledge, industry insights, and impressive projects."
+            "Polish your technical skills, showcase data wrangling challenges and visualization tools, be familiar with key statistical concepts and machine learning topics, and highlight your portfolio projects."
+
+        ],
+
+    "Behavioral Balance, technical expertise, soft skills, and team player":
+    [
+            "Be confident in your technical skills."
+            "Your preparation so far shows great dedication."
+            "Remember to showcase your strong technical skills in Python, R, and SQL."
+            "Make sure to demonstrate not just technical skills, but also your ability to communicate effectively and work well in a team."
+            "Good luck with your interview! Your preparation and enthusiasm will surely make a positive impression."
+            "Remember to highlight your problem-solving skills and real-world applications of your knowledge."
+    ],
+    "Industry Insight":
+        [
+            "Stay updated on industry trends."
+            "Brush up on the latest industry trends."
+
+        ],
+    "Portfolio Power":
+        [
+            "Showcase your project portfolio."
+            "Highlight your portfolio."
+            "Showcase impressive projects from your portfolio."
+
+        ],
+    "out of left field questions or tasks":
+        [
+            "Be open to unexpected questions."
+            "Remember to stay confident and be open to unexpected questions."
+            "Stay confident and good luck!"
+        ]
+
+
+
+}
